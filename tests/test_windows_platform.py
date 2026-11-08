@@ -307,3 +307,39 @@ def test_herdr_events_uses_ndjson_and_surfaces_events_lost(ndjson_server):
         assert next(stream)["event"]["type"] == "events_lost"
         with pytest.raises(HerdrError):
             next(stream)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Herdr Windows status marker to named pipe mapping")
+def test_windows_status_marker_is_never_opened_as_a_disk_transport(tmp_path, monkeypatch, ndjson_server):
+    from superaris.transport import connect, endpoint_exists
+    monkeypatch.chdir(tmp_path)
+    def handler(read, send):
+        assert read() == b'ping\n'
+        send(b'pong\n')
+    with ndjson_server(handler) as endpoint:
+        marker = endpoint[len("\\\\.\\pipe\\"):]
+        Path(marker).write_bytes(b"ordinary marker content")
+        assert endpoint_exists(marker)
+        with connect(marker, 2) as connection:
+            connection.sendall(b'ping\n')
+            assert connection.readline() == b'pong\n'
+        assert Path(marker).read_bytes() == b"ordinary marker content"
+
+
+def test_atomic_metadata_reads_during_other_process_replacements(tmp_path):
+    from superaris.state import read, write
+    target = tmp_path / "元数据 with spaces.json"
+    write(target, {"counter": -1})
+    worker = child('''from pathlib import Path
+import sys
+from superaris.state import write
+for counter in range(100):
+    write(Path(sys.argv[1]), {"counter": counter})
+''', target)
+    samples = 0
+    while worker.poll() is None:
+        assert isinstance(read(target)["counter"], int)
+        samples += 1
+    out, err = worker.communicate(timeout=10)
+    assert worker.returncode == 0, (out, err)
+    assert read(target)["counter"] == 99 and samples

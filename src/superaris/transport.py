@@ -7,6 +7,12 @@ import socket
 import time
 
 
+def windows_pipe_name(endpoint: str) -> str:
+    # Herdr v0.9.5 status prints a filesystem marker. Its GenericNamespaced
+    # transport uses that entire marker path as the Windows pipe namespace.
+    return endpoint if endpoint.startswith("\\\\.\\pipe\\") else "\\\\.\\pipe\\" + endpoint
+
+
 class WindowsPipe:
     """Overlapped Win32 I/O, so idle subscriptions have a real bounded timeout."""
     def __init__(self, endpoint: str, timeout: float):
@@ -32,13 +38,13 @@ class WindowsPipe:
         self.buffer = b""
         deadline = time.monotonic() + timeout
         while True:
-            self.handle = self.api.CreateFileW(endpoint, 0xC0000000, 0, None, 3, 0x40000000, None)
+            self.handle = self.api.CreateFileW(windows_pipe_name(endpoint), 0xC0000000, 0, None, 3, 0x40000000, None)
             if self.handle != ctypes.c_void_p(-1).value:
                 break
             error = ctypes.get_last_error()
             if error != 231 or time.monotonic() >= deadline:  # ERROR_PIPE_BUSY
                 raise ctypes.WinError(error)
-            self.api.WaitNamedPipeW(endpoint, max(1, int((deadline - time.monotonic()) * 1000)))
+            self.api.WaitNamedPipeW(windows_pipe_name(endpoint), max(1, int((deadline - time.monotonic()) * 1000)))
 
     def _io(self, writing: bool, data):
         c, w = self.c, self.w
@@ -116,11 +122,14 @@ def endpoint_exists(endpoint: str) -> bool:
     if os.name != "nt":
         from pathlib import Path
         return Path(endpoint).exists()
+    from pathlib import Path
+    if not endpoint.startswith("\\\\.\\pipe\\") and Path(endpoint).exists():
+        return True  # live OR stale marker; snapshot must diagnose, never restart
     import ctypes
     from ctypes import wintypes as w
     api = ctypes.WinDLL("kernel32", use_last_error=True)
     api.WaitNamedPipeW.argtypes = [w.LPCWSTR, w.DWORD]
-    if api.WaitNamedPipeW(endpoint, 1):
+    if api.WaitNamedPipeW(windows_pipe_name(endpoint), 1):
         return True
     error = ctypes.get_last_error()
     if error in (2, 3):

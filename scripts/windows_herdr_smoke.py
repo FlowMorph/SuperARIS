@@ -19,6 +19,7 @@ import uuid
 
 from superaris.client import Herdr, verify_owner
 from superaris.platform import detached_process_options, command_line
+from superaris.transport import windows_pipe_name
 
 
 def main():
@@ -60,7 +61,7 @@ def main():
         pane = workspace["root_pane"]["pane_id"]
         evidence["workspace"] = workspace
         evidence["endpoint"] = client.socket_path()
-        assert evidence["endpoint"].startswith("\\\\.\\pipe\\"), evidence["endpoint"]
+        evidence["native_pipe"] = windows_pipe_name(evidence["endpoint"])
         assert client.request("ping", {})["type"] == "pong"
         # A synthetic Node entry exercises real Windows process-info without
         # installing/authenticating or invoking any model CLI.
@@ -102,7 +103,12 @@ def main():
                 if server.poll() is None:
                     server.terminate()
                     server.wait(timeout=10)
-        temporary.cleanup()
+        # Preserve original result even if Windows still releases a ConPTY
+        # handle after server.stop; this directory belongs only to this runner.
+        try:
+            temporary.cleanup()
+        except OSError as exc:
+            evidence["temporary_cleanup_error"] = repr(exc)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(evidence, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({"status": evidence["status"], "session": session,

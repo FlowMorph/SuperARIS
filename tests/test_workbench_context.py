@@ -287,7 +287,7 @@ def test_every_role_has_local_navigation_catalog_recovery_and_scope(inputs, role
         assert "```powershell" in text and "Do not paste `&`/`$env:` syntax into Bash" in text
     else:
         assert f"--role {role} --skill SKILL_NAME" in text
-    assert "-m superaris context" in text
+    assert ("'-m' 'superaris' 'context'" if context_module.WINDOWS else "-m superaris context") in text
     assert "file-only tools" in text and "hand the named skill request to the main owner" in text
     assert str(navigation) in packet.read_text()
     assert str(Path(result["recovery_file"])) in packet.read_text()
