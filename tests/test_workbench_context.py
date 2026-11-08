@@ -15,6 +15,7 @@ def inputs(tmp_path, monkeypatch):
     home = tmp_path / "home"
     home.mkdir()
     monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
     repo = tmp_path / "repo"
     project = tmp_path / "project"
     project.mkdir()
@@ -215,7 +216,10 @@ def test_catalog_closure_and_named_index_are_reachable(inputs):
         assert f"{name}: `{copied}`" in packet
         assert Path(copied).is_file()
     assert str(repo / "tools") in packet
-    assert "set ARIS_REPO=" in packet and "explicitly in that same invocation" in packet
+    if context_module.WINDOWS:
+        assert "$env:ARIS_REPO" in packet and "in that same shell" in packet
+    else:
+        assert "set ARIS_REPO=" in packet and "explicitly in that same invocation" in packet
     assert "Do not assume a reused or adopted native process inherited a launcher environment" in packet
     source = repo / "skills/skills-codex/paper-write/SKILL.md"
     source.write_text("changed child")
@@ -278,7 +282,11 @@ def test_every_role_has_local_navigation_catalog_recovery_and_scope(inputs, role
         assert path.is_relative_to(local_root) and path.is_file()
     assert "**pipeline**" in text and "**workflow**" in text and "**skill**" in text
     assert "Literature" in text and "Experiments" in text and "Writing" in text
-    assert f"--role {role} --skill SKILL_NAME" in text
+    if context_module.WINDOWS:
+        assert f"'--role' '{role}' '--skill' 'SKILL_NAME'" in text
+        assert "```powershell" in text and "Do not paste `&`/`$env:` syntax into Bash" in text
+    else:
+        assert f"--role {role} --skill SKILL_NAME" in text
     assert "-m superaris context" in text
     assert "file-only tools" in text and "hand the named skill request to the main owner" in text
     assert str(navigation) in packet.read_text()

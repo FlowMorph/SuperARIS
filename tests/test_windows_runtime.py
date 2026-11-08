@@ -97,3 +97,57 @@ def test_wizard_cancel_does_not_install_or_write(tmp_path, monkeypatch):
     with pytest.raises(wizard.Cancelled):
         wizard.run()
     assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("preset", ["codex", "cc-codex", "cc-codex-agy"])
+def test_partial_cli_intent_restores_three_roles_after_lost_start_response(portable_team, preset):
+    project, fake = portable_team
+    script = fake["binary"].with_suffix(".py") if os.name == "nt" else fake["binary"]
+    code = script.read_text(encoding="utf-8")
+    anchor = '    output({"agent": state["agents"][name]})'
+    assert anchor in code
+    script.write_text(code.replace(anchor, '''    if state.pop("fail_first_start_response", False):
+        save()
+        raise SystemExit("simulated startup timeout after owner actually launched")
+    output({"agent": state["agents"][name]})''', 1), encoding="utf-8")
+    live = state.read(fake["state"])
+    live["fail_first_start_response"] = True
+    state.write(fake["state"], live)
+    failed = start(project, fake, "--preset", preset, "--model", "writer=chosen-writer",
+                   "--write-scope", "writer=owned/写作")
+    assert failed.returncode != 0 and "startup timeout" in failed.stderr
+    path = state.directory(project) / "launch.json"
+    partial = state.read(path)
+    assert set(partial["roles"]) == {"main"} and len(partial["pending_start"]["roles"]) == 3
+    original = partial["roles"]["main"]
+    resumed = start(project, fake)
+    assert resumed.returncode == 0, resumed.stderr
+    complete = state.read(path)
+    assert set(complete["roles"]) == {"main", "engineer", "writer"}
+    assert complete["roles"]["main"]["pane_id"] == original["pane_id"]
+    assert complete["roles"]["writer"]["requested_model"] == "chosen-writer"
+    assert Path(complete["roles"]["writer"]["inputs"]["write_scope"]) == project / "owned/写作"
+    assert "pending_start" not in complete
+    assert sum(c[:2] == ["agent", "start"] for c in state.read(fake["state"])["commands"]) == 3
+
+
+def test_draft_revokes_automation_and_does_not_resend_when_cleared(portable_team):
+    project, fake = portable_team
+    first = start(project, fake, "--preset", "codex")
+    assert first.returncode == 0, first.stderr
+    live = state.read(fake["state"])
+    live["visible_input"] = "› unsent human draft"
+    state.write(fake["state"], live)
+    before = sum(c[:2] == ["agent", "prompt"] for c in live["commands"])
+    blocked = start(project, fake, "--task", "New bounded task")
+    assert blocked.returncode == 0, blocked.stderr
+    bound = state.read(state.directory(project) / "launch.json")
+    assert bound["roles"]["main"]["automation_owned"] is False
+    assert bound["roles"]["main"]["delivery"]["phase"] == "visible_notice"
+    live = state.read(fake["state"])
+    assert live["visible_input"] == "› unsent human draft"
+    live["visible_input"] = "›"
+    state.write(fake["state"], live)
+    again = start(project, fake)
+    assert again.returncode == 0, again.stderr
+    assert sum(c[:2] == ["agent", "prompt"] for c in state.read(fake["state"])["commands"]) == before

@@ -23,6 +23,7 @@ def test_missing_herdr_no_install_never_invokes_installer_or_server(tmp_path, mo
 
 
 def test_installer_uses_existing_homebrew_and_exact_package_argv(monkeypatch):
+    monkeypatch.setattr(transport, "WINDOWS", False)
     monkeypatch.setattr(transport.shutil, "which", lambda name: "/existing/brew" if name == "brew" else None)
     calls = []
 
@@ -70,3 +71,22 @@ def test_existing_session_socket_is_probed_without_server_restart(tmp_path, monk
     ]
     assert socket.exists()
     assert not log.parent.exists()
+
+
+def test_windows_installer_uses_official_command_and_process_local_path(tmp_path, monkeypatch):
+    monkeypatch.setattr(transport, "WINDOWS", True)
+    monkeypatch.setattr(transport.shutil, "which", lambda name: "powershell.exe" if name == "powershell" else None)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    monkeypatch.setenv("PATH", "original-path")
+    alias = tmp_path / "Programs/Herdr/bin"
+    alias.mkdir(parents=True)
+    (alias / "herdr.exe").write_bytes(b"fake installed executable")
+    calls = []
+    def fake_run(argv, **kwargs):
+        calls.append(argv)
+        return subprocess.CompletedProcess(argv, 0)
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    transport.install_herdr()
+    assert calls == [["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+                      "irm https://herdr.dev/install.ps1 | iex"]]
+    assert transport.os.environ["PATH"].startswith(str(alias) + transport.os.pathsep)

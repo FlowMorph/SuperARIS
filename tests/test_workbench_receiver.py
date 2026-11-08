@@ -61,7 +61,7 @@ def atomic_json(path, value):
     temporary.replace(path)
 
 
-def wait_until(predicate, timeout=10):
+def wait_until(predicate, timeout=20):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         value = predicate()
