@@ -178,3 +178,15 @@ def test_actual_windows_powershell51_context_command_with_unicode_spaces_and_apo
     loaded = json.loads(result.stdout)
     assert "research-lit" in loaded["skill_index"]
     assert Path(loaded["packet"]).is_file() and record.read_bytes() == before
+
+
+def test_windows_crt_permission_error_without_winerror_is_bounded_metadata_only(monkeypatch):
+    monkeypatch.setattr(state, "WINDOWS", True)
+    calls = []
+    def metadata():
+        calls.append(1)
+        if len(calls) == 1:
+            raise PermissionError(13, "CRT sharing conflict")
+        return "original local metadata"
+    assert state._metadata_io(metadata) == "original local metadata"
+    assert len(calls) == 2

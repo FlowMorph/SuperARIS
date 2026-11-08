@@ -6,7 +6,7 @@ import json
 import os
 import time
 
-from .platform import FileLock, LockBusy
+from .platform import WINDOWS, FileLock, LockBusy
 from pathlib import Path
 
 
@@ -25,7 +25,7 @@ def _metadata_io(operation):
         try:
             return operation()
         except PermissionError as exc:
-            if os.name != "nt" or getattr(exc, "winerror", None) not in (5, 32, 33) or time.monotonic() >= deadline:
+            if not WINDOWS or getattr(exc, "winerror", None) not in (None, 5, 32, 33) or time.monotonic() >= deadline:
                 raise
             time.sleep(.01)
 
