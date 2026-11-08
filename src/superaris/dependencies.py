@@ -1,7 +1,6 @@
 """Explicit or lazily fetched, commit-pinned canonical ARIS dependency."""
 from __future__ import annotations
 
-import fcntl
 import os
 from pathlib import Path, PurePosixPath
 import shutil
@@ -9,6 +8,8 @@ import sys
 import tarfile
 import tempfile
 from urllib.request import urlopen
+
+from .platform import FileLock
 
 
 ARIS_COMMIT = "2901234ad2954cd2388ced8d3aed2ed9de42803a"
@@ -99,8 +100,7 @@ def resolve_aris_repo(explicit: str | Path | None = None) -> Path:
     parent = base / "superaris/aris"
     cached = parent / ARIS_COMMIT
     parent.mkdir(parents=True, exist_ok=True)
-    with (parent / f"{ARIS_COMMIT}.lock").open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+    with FileLock(parent / f"{ARIS_COMMIT}.lock"):
         if cached.exists():
             try:
                 return _validate_repo(cached)

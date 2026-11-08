@@ -1,0 +1,94 @@
+"""No-model native Herdr smoke using only a fresh test-owned named session.
+
+Run after installing the official Windows distribution (including ConPTY DLLs):
+  python scripts/windows_herdr_smoke.py --herdr-bin PATH --output evidence.json
+Sources: https://herdr.dev/tui/docs/cli-reference/ and /socket-api/.
+No user session is attached, modified, stopped, or deleted.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import time
+import uuid
+
+from superaris.client import Herdr
+from superaris.platform import detached_process_options
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--herdr-bin", default="herdr")
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    if os.name != "nt":
+        parser.error("This smoke must run on native Windows; no emulated success is reported")
+    session = "superaris-smoke-" + uuid.uuid4().hex
+    client = Herdr(session, args.herdr_bin)
+    evidence = {"session": session, "platform": os.name, "models_called": False,
+                "sources": ["https://herdr.dev/tui/docs/cli-reference/",
+                            "https://herdr.dev/tui/docs/socket-api/"]}
+    server = None
+    temporary = tempfile.TemporaryDirectory(prefix="superaris smoke 中文 ")
+    try:
+        evidence["version"] = subprocess.run([args.herdr_bin, "--version"], check=True,
+            capture_output=True, text=True, timeout=20).stdout.strip()
+        # Record the actual binary's supported protocol, rather than assuming
+        # the Windows release equals a previously tested macOS version.
+        evidence["schema"] = json.loads(client.run("api", "schema", "--json"))
+        root = Path(temporary.name)
+        with (root / "server.log").open("ab") as output:
+            server = subprocess.Popen([args.herdr_bin, "--session", session, "server"],
+                stdin=subprocess.DEVNULL, stdout=output, stderr=output,
+                **detached_process_options())
+        deadline = time.monotonic() + 30
+        while True:
+            try:
+                client.snapshot()
+                break
+            except Exception:
+                if server.poll() is not None or time.monotonic() >= deadline:
+                    raise RuntimeError((root / "server.log").read_text(errors="replace"))
+                time.sleep(.2)
+        workspace = client.json("workspace", "create", "--cwd", str(root),
+                                "--label", "SuperARIS no-model smoke", "--no-focus")
+        pane = workspace["root_pane"]["pane_id"]
+        evidence["workspace"] = workspace
+        evidence["endpoint"] = client.socket_path()
+        assert evidence["endpoint"].startswith("\\\\.\\pipe\\"), evidence["endpoint"]
+        assert client.request("ping", {})["type"] == "pong"
+        # A synthetic custom agent state invokes no coding-agent binary.
+        client.request("pane.report_agent", {"pane_id": pane, "source": "custom:superaris-smoke",
+            "agent": "superaris-smoke", "state": "working", "message": "no-model transport check"})
+        evidence["pane"] = client.request("pane.get", {"pane_id": pane})
+        assert "superaris-smoke" in json.dumps(evidence["pane"])
+        evidence["snapshot"] = client.snapshot()
+        evidence["status"] = "passed"
+    except BaseException as exc:
+        evidence["status"] = "failed"
+        evidence["error"] = repr(exc)
+        raise
+    finally:
+        if server is not None:
+            try:
+                # Every mutating command retains our generated explicit selector.
+                evidence["cleanup"] = client.run("server", "stop", timeout=15)
+                server.wait(timeout=15)
+            except Exception as exc:
+                evidence["cleanup_error"] = repr(exc)
+                if server.poll() is None:
+                    server.terminate()
+                    server.wait(timeout=10)
+        temporary.cleanup()
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(evidence, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({"status": evidence["status"], "session": session,
+                      "evidence": str(args.output)}, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()

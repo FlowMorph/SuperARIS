@@ -101,7 +101,7 @@ class ReceiverProject:
 
     def launch(self, attach=False):
         return self.invoke(
-            "start", "--session", "isolated-test", "--owner", "existing-owner",
+            "start", "--only-role", "main", "--session", "isolated-test", "--owner", "existing-owner",
             "--no-install", "--herdr-bin", self.binary, *([] if attach else ["--no-attach"]),
         )
 

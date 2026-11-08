@@ -74,21 +74,20 @@ def _event_type(event: dict) -> str | None:
 def listen(project: Path, binary: str = "herdr", duration: float | None = 300, interval: float = 5,
            stop_event=None) -> dict:
     """Only one foreground/attached receiver may deliver for this project."""
-    import fcntl
+    from .platform import FileLock, LockBusy
     project = Path(project).expanduser().resolve()
     if not project.is_dir():
         raise ValueError(f"Project directory does not exist: {project}")
     root = directory(project)
     root.mkdir(parents=True, exist_ok=True)
-    with (root / "listen.lock").open("a") as handle:
-        try:
-            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as exc:
-            raise ValueError("Another receiver owns this project; stop or reuse that receiver before listening again") from exc
-        try:
-            return _listen(project, binary, duration, interval, stop_event)
-        finally:
-            fcntl.flock(handle, fcntl.LOCK_UN)
+    try:
+        lock = FileLock(root / "listen.lock", blocking=False).acquire()
+    except LockBusy as exc:
+        raise ValueError("Another receiver owns this project; stop or reuse that receiver before listening again") from exc
+    try:
+        return _listen(project, binary, duration, interval, stop_event)
+    finally:
+        lock.release()
 
 
 def _listen(project: Path, binary: str, duration: float | None, interval: float, stop_event) -> dict:

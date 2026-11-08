@@ -1,11 +1,17 @@
 # Dependencies and source selection
 
-SuperARIS v0.1.0 requires Python ≥3.10 on macOS/Linux. Its runtime uses Unix
-`fcntl` locks and PTYs; Windows runtime support is not provided. Herdr carries
-visible sessions. Install/login to the native CLIs selected for your team using
-their own instructions. Executable detection is not an authentication or model
-probe. Missing Herdr follows the launcher's existing Homebrew installation path
-where available; otherwise the reported dependency must be installed separately.
+SuperARIS v0.1.0 requires Python ≥3.10 on macOS, Linux or native Windows.
+Herdr carries visible sessions. Windows uses kernel file locks, named-pipe
+transport and a detached receiver process; Unix uses `fcntl` and Unix sockets.
+See [Windows setup and support scope](WINDOWS.md) for PowerShell installation
+and the distinction between product compatibility and individual ARIS skills.
+
+Install/login to the native CLIs selected for your team using their own
+instructions. Executable detection is not an authentication or model probe.
+On confirmed startup, missing Herdr can be installed through Homebrew where
+available, or the official PowerShell installer on Windows. Language/project
+selection, help, plans and cancellation do not install dependencies or fetch ARIS.
+Native login and trust prompts are never automatically approved.
 
 ## ARIS is a separate source dependency
 
@@ -28,6 +34,15 @@ Use an explicit full ARIS checkout to work offline or retain a chosen version:
 SUPERARIS_ARIS_REPO=/path/to/aris superaris
 superaris start /path/to/project --aris-repo /path/to/aris --plan
 superaris context /path/to/project --role main --aris-repo /path/to/aris --skill experiment-plan
+```
+
+PowerShell source selection uses an environment assignment:
+
+```powershell
+$env:SUPERARIS_ARIS_REPO = "C:\Research Tools\aris"
+superaris
+# Or select the source for one explicit command:
+superaris start "C:\Research\项目" --aris-repo "C:\Research Tools\aris" --plan
 ```
 
 The checkout must contain canonical `skills/`, host mirrors, `docs/` and `tools/`.

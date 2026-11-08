@@ -7,7 +7,7 @@ project state remains authoritative at its original paths.
 from pathlib import Path
 import os
 import re
-import shlex
+from .platform import WINDOWS, command_line
 import shutil
 
 from .dependencies import productcommand, resolve_aris_repo
@@ -217,7 +217,7 @@ def _navigation(project, role, harness, task, scopes, repo, run, skill_index, or
         "an independent reviewer retains its required fresh context and isolation.\n",
         encoding="utf-8",
     )
-    command = shlex.join([*productcommand(), "context", str(project), "--role", role, "--skill", "SKILL_NAME"])
+    command = command_line([*productcommand(), "context", str(project), "--role", role, "--skill", "SKILL_NAME"])
     navigation = run / "navigation.md"
     local_index = "\n".join(f"- {name}: `{path}`" for name, path in skill_index.items())
     navigation.write_text(
@@ -237,7 +237,10 @@ def _navigation(project, role, harness, task, scopes, repo, run, skill_index, or
         "## On-demand skills\n\n"
         "Choose the skill by name from the local catalog. The command-capable project owner can prepare it through "
         "the existing source resolver, host customization precedence and catalog dependency closure:\n\n"
-        f"```sh\n{command}\n```\n\n"
+        f"```{'powershell' if WINDOWS else 'sh'}\n{command}\n```\n\n"
+        + ("These examples execute in PowerShell. A CLI launched from PowerShell may still expose only a Bash tool; "
+           "invoke PowerShell explicitly or use the equivalent syntax for the actual shell. Do not paste `&`/`$env:` syntax into Bash.\n\n" if WINDOWS else "")
+        +
         "Replace SKILL_NAME with the chosen catalog name. This preparation preserves the role's current task, recovery "
         "and scopes by default and returns a new packet; it does not send native input or execute the skill. "
         "Read the returned packet/index and then the actual skill before doing authorized work. If your read domain "
@@ -247,7 +250,7 @@ def _navigation(project, role, harness, task, scopes, repo, run, skill_index, or
         "## Capabilities and tools\n\n"
         "Catalog entries describe possible tools, not verified accounts, MCP services, GPUs or reviewer availability. "
         "Check the selected skill's actual requirements and use the existing owner for unsupported execution. "
-        "Set the packet's ARIS_REPO explicitly in the same helper invocation. Preserve original MCP routes, reviewer "
+        + ("For PowerShell helpers, set `$env:ARIS_REPO = '" + str(repo).replace("'", "''") + "'` and invoke Python helpers with `&` and the installed Python interpreter in that same shell. " if WINDOWS else "Set the packet's ARIS_REPO explicitly in the same helper invocation. ") + "Preserve original MCP routes, reviewer "
         "freshness, budgets, paused Goals and publication/merge permissions. Local files or submitted messages do not "
         "prove native loading, actual reading or permanent model memory. After compact/restart, re-read recovery, "
         "the current role packet and its required skills.\n",
@@ -423,7 +426,8 @@ def prepare_context(
         + (f"Shared references source: `{shared}`\n\n" if sources else "")
         + f"Parent-depth shared references source: `{parent_shared}` → `{run / 'shared-references'}`.\n\n"
         + f"Canonical dependency catalog: `{repo / 'tools/skill-groups.tsv'}`. Canonical helper root: `{repo / 'tools'}`. "
-        f"Before each helper shell invocation, set ARIS_REPO={repo} explicitly in that same invocation. "
+        + (f"For PowerShell, set $env:ARIS_REPO to {str(repo)!r} before invoking the Python helper with & in that same shell. " if WINDOWS else f"Before each helper shell invocation, set ARIS_REPO={repo} explicitly in that same invocation. ")
+        +
         "Do not assume a reused or adopted native process inherited a launcher environment. "
         "The main owner executes canonical tools through the original skill helper resolver. A role or file-only MCP author "
         "without command execution or outside-root access must report that limitation to the main owner, "

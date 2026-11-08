@@ -48,7 +48,7 @@ Reopen a running team to continue its conversations, or give a new session the p
 
 ## Install and open
 
-Requires Python 3.10+ on macOS or Linux, [Herdr](https://herdr.dev), and your chosen native CLIs (`codex`, `claude`, `agy`) with model access configured.
+Requires Python 3.10+ on macOS, Linux or Windows, [Herdr](https://herdr.dev), and your chosen native CLIs (`codex`, `claude`, `agy`) with model access configured.
 
 ```bash
 pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'
@@ -97,8 +97,23 @@ Help, plans and wizard cancellation do not fetch ARIS. See [source selection](do
 
 </details>
 
+## Windows
+
+Use native Windows Terminal / PowerShell with Python 3.10+ and Git:
+
+```powershell
+py -m pip install --user pipx
+py -m pipx ensurepath
+# Open a new terminal after ensurepath.
+pipx install "git+https://github.com/wanshuiyin/SuperARIS.git"
+superaris
+```
+
+The confirmed startup can install missing Herdr using its official Windows installer. Native CLI login and trust remain interactive. A local wheel also works without Git. See [Windows setup, recovery, and support scope](docs/WINDOWS.md).
+
 ## Guides
 
+- [Windows setup and support scope](docs/WINDOWS.md)
 - [Workbench, roles, and human handoff](docs/WORKBENCH.md)
 - [Skills, context, and recovery](docs/PROJECT_CONTEXT.md)
 - [Follow-up and project memory](docs/RESULTS_AND_MEMORY.md)

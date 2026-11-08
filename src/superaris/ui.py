@@ -23,6 +23,7 @@ _EN = {
     "已找到": "found", "未找到": "not found",
     "登录与模型设置由各自客户端处理；CC 使用你的已有配置。": "Each client handles its own login and model settings; CC uses your existing configuration.",
     "Herdr：已找到，复用现有服务；需要时建立所选项目工作台。": "Herdr: found; reuse the existing service and create the selected project workbench when needed.",
+    "Herdr：未找到；确认启动后会使用官方 Windows 安装器。": "Herdr: not found; confirmed startup will use the official Windows installer.",
     "Herdr：未找到；选择启动后会经现有 Homebrew 安装（brew install herdr）。": "Herdr: not found; starting will install it through existing Homebrew (brew install herdr).",
     "Herdr：未找到，也未找到 Homebrew。请先安装 Herdr TUI 后重试：": "Herdr and Homebrew were not found. Install Herdr TUI, then retry:",
     "https://herdr.dev/tui/docs/install/ （本次不会启动模型或创建项目）": "https://herdr.dev/tui/docs/install/ (No model will start and no project will be created.)",

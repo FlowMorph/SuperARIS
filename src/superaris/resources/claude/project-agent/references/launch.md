@@ -8,8 +8,12 @@ variable. Do not locate the product under `$ARIS_REPO/tools/` or require
 
 ## Source and requirements
 
-The runtime requires Python ≥3.10 on macOS/Linux (Unix locks and PTYs), Herdr
-and the selected native CLIs. Use their own model/login configuration; detecting
+The runtime requires Python ≥3.10 on macOS, Linux or native Windows, Herdr
+and the selected native CLIs. On Windows use Windows Terminal / PowerShell;
+Herdr supplies ConPTY panes, and SuperARIS uses kernel file locks, raw NDJSON
+named pipes and a detached receiver. Confirmed startup can install missing
+Herdr with its official PowerShell installer. Chooser screens and cancellation
+do not install dependencies or fetch ARIS. Use their own model/login configuration; detecting
 an executable does not verify authentication or model access. No model probes,
 credentials requests, global skills installation or model/MCP rewrites are needed.
 
@@ -25,6 +29,14 @@ fetch it. Use an explicit complete ARIS checkout with:
 SUPERARIS_ARIS_REPO=/path/to/aris superaris
 superaris start /path/to/project --aris-repo /path/to/aris --plan
 ```
+
+In PowerShell, assign `$env:SUPERARIS_ARIS_REPO = "C:\Research Tools\aris"`
+before running `superaris`, or pass `--aris-repo "C:\Research Tools\aris"`.
+Quote paths containing spaces or CJK characters. Bash environment-assignment
+syntax above is for Unix shells. Upstream skills may still need Bash, GPU,
+SSH, LaTeX or other tools; inspect their requirements separately and use a
+suitable host or WSL when needed. Product startup is not proof that every
+ARIS helper is Windows-compatible.
 
 A bound project's `aris_repo` retains the chosen source for later context.
 Ambient `ARIS_REPO` is for canonical ARIS helpers, not product source discovery.

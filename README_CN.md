@@ -50,7 +50,7 @@ SuperARIS 基于 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-
 
 ## 安装与启动
 
-需要 Python 3.10+、macOS 或 Linux、[Herdr](https://herdr.dev)，以及配置好模型访问的所选原生 CLI（`codex`、`claude`、`agy`）。
+需要 Python 3.10+、macOS / Linux / Windows、[Herdr](https://herdr.dev)，以及配置好模型访问的所选原生 CLI（`codex`、`claude`、`agy`）。
 
 ```bash
 pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'
@@ -99,8 +99,23 @@ SUPERARIS_ARIS_REPO=/path/to/aris superaris
 
 </details>
 
+## Windows
+
+原生 Windows Terminal / PowerShell 路径需要 Python 3.10+ 与 Git：
+
+```powershell
+py -m pip install --user pipx
+py -m pipx ensurepath
+# ensurepath 后重新打开终端。
+pipx install "git+https://github.com/wanshuiyin/SuperARIS.git"
+superaris
+```
+
+确认启动后，可通过官方 Windows 安装器补装缺失的 Herdr。原生 CLI 的登录与信任由你交互完成；本地 wheel 安装无需 Git。[Windows 安装、恢复与支持范围 →](docs/WINDOWS.md)
+
 ## 使用文档
 
+- [Windows 安装与支持范围](docs/WINDOWS.md)
 - [工作台、角色与人工接手](docs/WORKBENCH.md)
 - [技能、上下文与恢复](docs/PROJECT_CONTEXT.md)
 - [主动跟进与项目记忆](docs/RESULTS_AND_MEMORY.md)

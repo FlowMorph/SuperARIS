@@ -1,0 +1,40 @@
+name: Native Windows
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install build pytest
+      - run: python -m build
+      - name: Install actual wheel
+        run: |
+          $wheel = (Get-ChildItem dist/*.whl).FullName
+          python -m pip install --no-deps $wheel
+      - name: Native process, pipe, runtime and resource contracts
+        run: python -m pytest -q tests/test_windows_platform.py tests/test_windows_runtime.py tests/test_workbench_tasks.py tests/test_workbench_delivery.py tests/test_installed_package.py
+      - name: Isolated installed consumer and pinned ARIS helper
+        run: python scripts/verify_install.py 'dist/*.whl'
+      - name: Official Herdr Windows distribution
+        run: |
+          $release = Invoke-RestMethod 'https://api.github.com/repos/herdrdev/herdr/releases/tags/v0.9.5'
+          $asset = $release.assets | Where-Object name -eq 'herdr-windows-x86_64.zip'
+          Invoke-WebRequest $asset.browser_download_url -OutFile "$env:RUNNER_TEMP/herdr.zip"
+          Expand-Archive "$env:RUNNER_TEMP/herdr.zip" "$env:RUNNER_TEMP/herdr"
+          $exe = (Get-ChildItem "$env:RUNNER_TEMP/herdr" -Recurse -Filter herdr.exe | Select-Object -First 1).FullName
+          "HERDR_SMOKE_BIN=$exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Real Herdr, named pipe, ConPTY and no-model report
+        run: python scripts/windows_herdr_smoke.py --herdr-bin "$env:HERDR_SMOKE_BIN" --output windows-evidence/herdr-smoke.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-windows-evidence
+          path: windows-evidence/

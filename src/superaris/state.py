@@ -4,6 +4,8 @@ from __future__ import annotations
 from contextlib import contextmanager
 import json
 import os
+
+from .platform import FileLock, LockBusy
 from pathlib import Path
 
 
@@ -30,16 +32,14 @@ def write(path: Path, value) -> None:
 
 @contextmanager
 def launch_lock(project: Path):
-    # Serialize local launcher changes; old process death releases the lock.
-    import fcntl
+    # Serialize local launcher changes; process death releases the kernel lock.
     path = directory(project)
     path.mkdir(parents=True, exist_ok=True)
-    with (path / "launch.lock").open("a") as handle:
-        try:
-            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as exc:
-            raise ValueError("Another launcher owns this project; wait for its result") from exc
-        try:
-            yield
-        finally:
-            fcntl.flock(handle, fcntl.LOCK_UN)
+    try:
+        lock = FileLock(path / "launch.lock", blocking=False).acquire()
+    except LockBusy as exc:
+        raise ValueError("Another launcher owns this project; wait for its result") from exc
+    try:
+        yield
+    finally:
+        lock.release()

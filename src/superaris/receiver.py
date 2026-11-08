@@ -6,7 +6,6 @@ Control and transport metadata live alongside the existing launch/handle files.
 from __future__ import annotations
 
 from contextlib import contextmanager
-import fcntl
 import os
 from pathlib import Path
 import subprocess
@@ -17,6 +16,7 @@ from .client import Herdr, HerdrError, verify_owner
 from .runtime import binding
 from .state import directory, read, write
 from . import __version__
+from .platform import FileLock, LockBusy, detached_process_options
 
 
 def implementation() -> dict:
@@ -39,25 +39,19 @@ def same_owner(expected: dict, current: dict) -> bool:
 def held(path: Path) -> bool:
     if not path.exists():
         return False
-    with path.open("r") as stream:
-        try:
-            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            return True
-        fcntl.flock(stream, fcntl.LOCK_UN)
-        return False
+    try:
+        with FileLock(path, blocking=False):
+            return False
+    except LockBusy:
+        return True
 
 
 @contextmanager
 def _start_lock(project: Path):
     root = directory(project)
     root.mkdir(parents=True, exist_ok=True)
-    with (root / "receiver-start.lock").open("a") as stream:
-        fcntl.flock(stream, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(stream, fcntl.LOCK_UN)
+    with FileLock(root / "receiver-start.lock"):
+        yield
 
 
 def status(project: Path) -> dict:
@@ -107,7 +101,7 @@ def ensure_receiver(project: Path, binary: str = "herdr", enable: bool = False) 
                 "--generation", generation, "--herdr-bin", binary]
         with (root / "receiver.log").open("ab") as output:
             process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=output, stderr=output,
-                                       start_new_session=True)
+                                       **detached_process_options())
         # The child may write its live record immediately; do not overwrite it.
         deadline = time.monotonic() + 3
         while time.monotonic() < deadline:
@@ -151,11 +145,11 @@ def run(project: Path, generation: str, binary: str = "herdr") -> dict:
     if record.get("generation") != generation:
         raise ValueError("Receiver generation no longer belongs to this launch")
     lifetime = ProjectLifetime(project, generation, record["owner"])
-    with (root / "receiver-owner.lock").open("a") as stream:
-        try:
-            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as exc:
-            raise ValueError("A managed receiver already owns this project") from exc
+    try:
+        owner_lock = FileLock(root / "receiver-owner.lock", blocking=False).acquire()
+    except LockBusy as exc:
+        raise ValueError("A managed receiver already owns this project") from exc
+    try:
         record.update(pid=os.getpid(), status="running")
         write(root / "receiver.json", record)
         outcome = {"reason": "stopped"}
@@ -183,5 +177,6 @@ def run(project: Path, generation: str, binary: str = "herdr") -> dict:
         finally:
             record.update(status="stopped", outcome=outcome)
             write(root / "receiver.json", record)
-            fcntl.flock(stream, fcntl.LOCK_UN)
+    finally:
+        owner_lock.release()
     return record

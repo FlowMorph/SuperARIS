@@ -6,9 +6,11 @@ import os
 from pathlib import Path
 import re
 import shutil
-import socket
 import subprocess
 import time
+
+from .platform import WINDOWS, detached_process_options
+from .transport import connect, endpoint_exists
 
 
 class HerdrError(RuntimeError):
@@ -25,7 +27,7 @@ class Herdr:
     def run(self, *args: str, timeout: float = 30) -> str:
         try:
             result = subprocess.run([self.binary, "--session", self.session, *args],
-                                    capture_output=True, text=True, timeout=timeout, check=False)
+                                    capture_output=True, text=True, encoding="utf-8", timeout=timeout, check=False)
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise HerdrError(f"Herdr request did not finish; inspect real state before retrying: {exc}") from exc
         if result.returncode:
@@ -47,7 +49,7 @@ class Herdr:
     def socket_path(self) -> str:
         if self._socket is None:
             status = self.run("status")
-            match = re.search(r"^\s*socket:\s*(.+)$", status, re.MULTILINE)
+            match = re.search(r"^\s*(?:socket|pipe):\s*(.+)$", status, re.MULTILINE)
             if not match:
                 raise HerdrError("Cannot resolve this explicit session's socket from herdr status")
             self._socket = match.group(1).strip()
@@ -57,12 +59,9 @@ class Herdr:
         """One raw API request for methods without a CLI wrapper. No implicit target."""
         request = {"id": "aris-workbench", "method": method, "params": params}
         try:
-            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
-                connection.settimeout(timeout)
-                connection.connect(self.socket_path())
+            with connect(self.socket_path(), timeout) as connection:
                 connection.sendall((json.dumps(request) + "\n").encode())
-                with connection.makefile("rb") as stream:
-                    response = json.loads(stream.readline())
+                response = json.loads(connection.readline())
         except (OSError, ValueError) as exc:
             raise HerdrError(f"Herdr {method} delivery unknown; reconcile before retry: {exc}") from exc
         if response.get("error"):
@@ -71,23 +70,20 @@ class Herdr:
 
     def events(self, subscriptions: list[dict], timeout: float = 30):
         """Yield a bounded native event stream; events_lost is surfaced, never replayed."""
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
-            connection.settimeout(timeout)
-            connection.connect(self.socket_path())
+        with connect(self.socket_path(), timeout) as connection:
             connection.sendall((json.dumps({"id": "aris-events", "method": "events.subscribe",
                                            "params": {"subscriptions": subscriptions}}) + "\n").encode())
-            with connection.makefile("rb") as stream:
-                while True:
-                    try:
-                        line = stream.readline()
-                    except socket.timeout:
-                        return
-                    if not line:
-                        raise HerdrError("Herdr event connection closed; refresh snapshot before resubscribing")
-                    value = json.loads(line)
-                    if value.get("error"):
-                        raise HerdrError(json.dumps(value["error"]))
-                    yield value
+            while True:
+                try:
+                    line = connection.readline()
+                except TimeoutError:
+                    return
+                if not line:
+                    raise HerdrError("Herdr event connection closed; refresh snapshot before resubscribing")
+                value = json.loads(line)
+                if value.get("error"):
+                    raise HerdrError(json.dumps(value["error"]))
+                yield value
 
     def ensure(self, log: Path, install: bool = True) -> None:
         if not shutil.which(self.binary):
@@ -97,21 +93,35 @@ class Herdr:
             if not shutil.which(self.binary):
                 raise HerdrError("Herdr installation finished but the command is not on PATH")
         # A live or stale existing socket is not permission to restart its server.
-        path = Path(self.socket_path())
-        if not path.exists():
+        endpoint = self.socket_path()
+        if not endpoint_exists(endpoint):
             log.parent.mkdir(parents=True, exist_ok=True)
             with log.open("ab") as output:
                 subprocess.Popen([self.binary, "--session", self.session, "server"],
                                  stdin=subprocess.DEVNULL, stdout=output, stderr=output,
-                                 start_new_session=True)
+                                 **detached_process_options())
             deadline = time.monotonic() + 10
-            while not path.exists() and time.monotonic() < deadline:
+            while not endpoint_exists(endpoint) and time.monotonic() < deadline:
                 time.sleep(0.05)
         self.snapshot()
 
 
 def install_herdr() -> None:
     """The user's explicit start plan authorizes installing the missing TUI only."""
+    if WINDOWS:
+        powershell = shutil.which("powershell") or shutil.which("pwsh")
+        if not powershell:
+            raise HerdrError("PowerShell is missing. Install Herdr from https://herdr.dev/tui/docs/install/ and retry.")
+        result = subprocess.run([powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+                                 "irm https://herdr.dev/install.ps1 | iex"], check=False)
+        if result.returncode:
+            raise HerdrError("Herdr installer failed; complete its native authentication/conflict before retrying")
+        # Installers cannot change their parent process PATH. Read only the
+        # documented compatibility alias; do not alter persistent environment.
+        alias = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData/Local")) / "Programs/Herdr/bin"
+        if (alias / "herdr.exe").is_file():
+            os.environ["PATH"] = str(alias) + os.pathsep + os.environ.get("PATH", "")
+        return
     brew = shutil.which("brew")
     if brew:
         result = subprocess.run([brew, "install", "herdr"], check=False)
@@ -127,7 +137,8 @@ def foreground(info: dict, kind: str | None = None) -> dict:
         argv = item.get("argv") or []
         if not argv or not item.get("cwd"):
             continue
-        executable = Path(argv[0]).name
+        executable = Path(argv[0]).name.lower()
+        executable = executable.removesuffix(".exe").removesuffix(".cmd")
         for harness in ([kind] if kind else ["codex", "claude", "agy"]):
             if executable == harness or (executable in {"node", "nodejs"} and len(argv) > 1
                     and (Path(argv[1]).name == f"{harness}.js" or

@@ -7,6 +7,7 @@ import re
 import shutil
 import unicodedata
 
+from .platform import WINDOWS
 from . import ui
 from .ui import tr
 
@@ -76,6 +77,9 @@ def show_capabilities(available: dict) -> None:
 def dependency_summary(available: dict) -> bool:
     if available["herdr"]:
         print(tr("Herdr：已找到，复用现有服务；需要时建立所选项目工作台。"))
+        return True
+    if WINDOWS:
+        print(tr("Herdr：未找到；确认启动后会使用官方 Windows 安装器。"))
         return True
     if available["brew"]:
         print(tr("Herdr：未找到；选择启动后会经现有 Homebrew 安装（brew install herdr）。"))
