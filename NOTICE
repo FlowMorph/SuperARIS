@@ -1,0 +1,17 @@
+SuperARIS
+Copyright (c) 2026 wanshuiyin
+
+SuperARIS was developed from the Herdr project-agent adaptation of
+Auto-claude-code-research-in-sleep (ARIS), copyright (c) 2026 wanshuiyin,
+under the MIT License. The original MIT copyright and permission notice are
+preserved in LICENSE.
+
+ARIS: https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep
+Default canonical ARIS dependency commit:
+2901234ad2954cd2388ced8d3aed2ed9de42803a
+
+The SuperARIS distribution includes its project-agent skills and runtime.
+Other ARIS skills, shared references and helpers are fetched separately from
+that fixed public source, or read from the user's explicitly chosen checkout.
+The ARIS source retains its own LICENSE. Herdr and native agent CLIs are
+separate dependencies and retain their respective licenses and configuration.
