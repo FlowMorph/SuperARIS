@@ -12,12 +12,13 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
 import tempfile
 import time
 import uuid
 
-from superaris.client import Herdr
-from superaris.platform import detached_process_options
+from superaris.client import Herdr, verify_owner
+from superaris.platform import detached_process_options, command_line
 
 
 def main():
@@ -36,7 +37,7 @@ def main():
     temporary = tempfile.TemporaryDirectory(prefix="superaris smoke 中文 ")
     try:
         evidence["version"] = subprocess.run([args.herdr_bin, "--version"], check=True,
-            capture_output=True, text=True, timeout=20).stdout.strip()
+            capture_output=True, text=True, encoding="utf-8", timeout=20).stdout.strip()
         # Record the actual binary's supported protocol, rather than assuming
         # the Windows release equals a previously tested macOS version.
         evidence["schema"] = json.loads(client.run("api", "schema", "--json"))
@@ -61,11 +62,29 @@ def main():
         evidence["endpoint"] = client.socket_path()
         assert evidence["endpoint"].startswith("\\\\.\\pipe\\"), evidence["endpoint"]
         assert client.request("ping", {})["type"] == "pong"
-        # A synthetic custom agent state invokes no coding-agent binary.
+        # A synthetic Node entry exercises real Windows process-info without
+        # installing/authenticating or invoking any model CLI.
+        node = shutil.which("node")
+        if not node:
+            raise RuntimeError("The no-model identity smoke requires Node from the runner")
+        synthetic = root / "codex.js"
+        synthetic.write_text("console.log('SUPERARIS_NO_MODEL_READY'); setInterval(()=>{},1000);", encoding="utf-8")
+        client.json("pane", "run", pane, command_line([node, str(synthetic)]))
+        deadline = time.monotonic() + 20
+        while True:
+            info = client.json("pane", "process-info", "--pane", pane)["process_info"]
+            if any("codex.js" in str(p.get("argv")) for p in info.get("foreground_processes", [])):
+                break
+            if time.monotonic() >= deadline:
+                raise RuntimeError("Synthetic Node entry missing from actual process-info: " + json.dumps(info))
+            time.sleep(.2)
+        evidence["process_info"] = info
         client.request("pane.report_agent", {"pane_id": pane, "source": "custom:superaris-smoke",
-            "agent": "superaris-smoke", "state": "working", "message": "no-model transport check"})
+            "agent": "codex", "state": "working", "message": "synthetic Node entry; no model"})
+        live = verify_owner(client, {"pane_id": pane, "harness": "codex"}, root.resolve())
+        evidence["verified_synthetic_owner"] = live
+        assert live["pid"]
         evidence["pane"] = client.request("pane.get", {"pane_id": pane})
-        assert "superaris-smoke" in json.dumps(evidence["pane"])
         evidence["snapshot"] = client.snapshot()
         evidence["status"] = "passed"
     except BaseException as exc:
