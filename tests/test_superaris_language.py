@@ -118,7 +118,8 @@ def test_confirmed_new_labels_follow_ui_language_without_changing_task_language(
         matching = [args for args in commands if args[:3] == ["pane", "rename", bound["roles"][role]["pane_id"]]]
         assert len(matching) == 1
         assert matching[0][3].startswith(title + " · ")
-        assert "wait for the user's concrete task" in bound["roles"][role]["inputs"]["task"]
+        expected_wait = "wait for the user's concrete task" if role == "main" else "wait for the main owner's scoped assignment"
+        assert expected_wait in bound["roles"][role]["inputs"]["task"]
         assert bound["roles"][role]["requested_model"] is None
     assert ["tab", "rename", "w1:t1", "SuperARIS · " + ("Workbench" if language == "en" else "工作台")] in commands
     if language == "en":
@@ -247,7 +248,7 @@ def test_layout_preview_borders_align_by_terminal_display_columns(capsys, langua
     previous = ui.language
     try:
         ui.set_language(language)
-        wizard.layout(wizard.COMBINATIONS[role_count - 1][2])
+        wizard.layout(wizard.COMBINATIONS[2][2][:role_count])
     finally:
         ui.set_language(previous)
     lines = [line for line in capsys.readouterr().out.splitlines() if line.startswith(("┌", "│", "├", "└"))]

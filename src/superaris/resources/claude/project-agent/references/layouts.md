@@ -1,43 +1,45 @@
 # Visible SuperARIS layouts
 
-`--preset` selects role/harness options. Only `main` starts by default; repeat
-`--only-role` for the roles needed now. Role, CLI harness and model are distinct:
-`main` can run the Claude Code (`claude`) harness with the user's configured
-model; that does not prove the backend is a Claude model. A local DeepSeek
-configuration is not a SuperARIS default. `writer` uses `agy` with the chosen
-Gemini or other configured model.
+New workbenches default to three responsibilities: `main`, `engineer` and
+`writer`, with the same left-owner / right-stacked-collaborators layout.
+Role, CLI harness and model remain distinct:
 
-For example, `--preset cc-codex --only-role main --only-role engineer` selects
-a compact pair. `--preset cc-codex-agy --only-role main --only-role writer`
-selects a writing pair; add `--only-role engineer` when fact checking is needed.
-Use distinct assignments and exclusive write scopes from the launch reference.
+| Preset | main | engineer | writer |
+|---|---|---|---|
+| `codex` | Codex | Codex | Codex |
+| `cc-codex` | Claude Code | Codex | Claude Code |
+| `cc-codex-agy` | Claude Code | Codex | Antigravity |
+
+Each role uses its selected native model. A Claude Code harness does not imply
+a particular provider; a local DeepSeek configuration is not a product default.
+Collaborators read their own ARIS context and wait for a scoped assignment;
+they do not execute the main task in parallel by default. Give them distinct
+assignments and exclusive write scopes as described in the launch reference.
 
 For a newly created owner, the launcher creates workspace `SuperARIS <project>`
-and tab `SuperARIS · Workbench`. A compact pair places the collaborator on the right;
-a new three-role paper workbench places the engineer above the writer there:
+and tab `SuperARIS · Workbench` (new labels follow the UI language):
 
 ```text
-Compact: own SuperARIS workspace
+Default: own SuperARIS workspace / SuperARIS · Workbench
 +-------------------+----------------------+
-| main              | engineer (optional)  |
-| Codex or CC       | Codex harness        |
-+-------------------+----------------------+
-
-Paper: own SuperARIS workspace / SuperARIS · Workbench
-+-------------------+----------------------+
-| main: CC harness  | engineer: Codex       |
-| goal/integration  | facts/compile         |
+| main              | engineer             |
+| goal/integration  | implementation/checks|
 |                   +----------------------+
-|                   | writer: AGY/Gemini    |
-|                   | substantive drafting |
+|                   | writer               |
+|                   | prose/explanation    |
 +-------------------+----------------------+
 ```
 
+Use explicit `--only-role` to select a smaller team, for example
+`--preset cc-codex --only-role main --only-role engineer` for a compact pair,
+or `--only-role main` for one owner. Existing teams and unfinished startup
+selections retain their recorded membership on ordinary reentry; these new
+defaults do not migrate them.
+
 This automatic layout applies only to newly created workbench panes. It does
-not rename or rearrange adopted owners. Roles still activate lazily; a preset
-alone never opens every role. Fresh reviewers and temporary MCP workers retain
-their original channels. On a narrow screen, move an owned collaborator to a
-separate tab using official Herdr controls.
+not rename or rearrange adopted owners. Fresh reviewers and temporary MCP
+workers retain their original channels. On a narrow screen, move an owned
+collaborator to a separate tab using official Herdr controls.
 
 An adopted owner preserves its original labels and pane topology. The first new
 collaborator receives a separate SuperARIS runtime workspace; later collaborators

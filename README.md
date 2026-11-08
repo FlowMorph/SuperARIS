@@ -20,7 +20,7 @@ Built on [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep
 
 Your main agent holds the research direction and coordinates the work. Codex can implement experiments and check evidence; Gemini can discuss the argument and write substantial paper sections. Each collaborator has its own ongoing session, so you can work directly with the teammate you need and continue the discussion where you left off.
 
-Start with Codex alone, add a Claude Code main agent with Codex engineering, or include an Antigravity writing role. Choose models through your own CLI configuration. Temporary MCP workers and fresh reviewers remain available alongside the persistent team.
+Every new team has three roles: main, engineer and writer. Choose an all-Codex team, Claude Code main/writer with Codex engineering, or Claude Code / Codex / Antigravity. Each role keeps its own model choice. Temporary MCP workers and fresh reviewers remain available alongside the persistent team.
 
 ## ARIS for every teammate
 
@@ -59,11 +59,13 @@ superaris
 
 Choose the interface language, project, team, and models, then confirm the workspace. Give the main agent a task, or open the team and discuss what to do next. The interface language is independent of your paper or task language.
 
-| Team | Persistent roles |
-|---|---|
-| Codex | Codex main agent |
-| Claude Code + Codex | Main agent and engineering collaborator |
-| Claude Code + Codex + Antigravity | Main agent, engineering, and writing collaborator |
+| Team | Main | Engineer | Writer |
+|---|---|---|---|
+| Codex | Codex | Codex | Codex |
+| Claude Code + Codex | Claude Code | Codex | Claude Code |
+| Claude Code + Codex + Antigravity | Claude Code | Codex | Antigravity |
+
+New workbenches use the same three-pane layout. Existing teams and pending startup choices stay intact; `--only-role` selects an explicit subset.
 
 SuperARIS obtains its pinned ARIS resources when needed. Existing ARIS installations and custom skills can be used through the documented source selection. [Dependencies and updates →](docs/DEPENDENCIES.md)
 

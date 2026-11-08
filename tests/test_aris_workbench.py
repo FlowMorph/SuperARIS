@@ -67,11 +67,14 @@ def test_plan_is_actual_offline_cli_without_project_or_global_mutation(project, 
 @pytest.mark.parametrize("preset,main_harness", [
     ("codex", "codex"), ("cc-codex", "claude"), ("cc-codex-agy", "claude"),
 ])
-def test_plan_starts_only_main_by_default_without_assuming_model(project, preset, main_harness):
+def test_plan_starts_three_roles_by_default_without_assuming_model(project, preset, main_harness):
     result = invoke("start", project, "--plan", "--preset", preset)
     assert result.returncode == 0, result.stderr
     roles = json.loads(result.stdout)["roles"]
-    assert [(r["role"], r["harness"]) for r in roles if r["active"]] == [("main", main_harness)]
+    assert [(r["role"], r["harness"]) for r in roles if r["active"]] == [
+        ("main", main_harness), ("engineer", "codex"),
+        ("writer", {"codex": "codex", "cc-codex": "claude", "cc-codex-agy": "agy"}[preset]),
+    ]
     assert all(r["model"] is None for r in roles)
 
 
@@ -103,7 +106,7 @@ def test_optional_role_can_be_planned_without_starting_other_roles(project):
 
 
 @pytest.mark.parametrize("options", [
-    ["--model", "writer=some-model"],
+    ["--model", "unknown=some-model"],
     ["--model", "missing-assignment"],
     ["--only-role", "unknown-role"],
     ["--role", "engineer=unknown-harness"],
@@ -241,7 +244,7 @@ def start(project, fake, *options):
 
 def test_start_non_git_project_without_native_id_preserves_customization(project, fake_herdr):
     before = tree_contents(project)
-    result = start(project, fake_herdr, "--task", "Inspect the existing approved task.")
+    result = start(project, fake_herdr, "--only-role", "main", "--task", "Inspect the existing approved task.")
     assert result.returncode == 0, result.stderr
     value = json.loads(result.stdout)
     assert value["mode"] == "running"
@@ -269,7 +272,7 @@ def test_start_non_git_project_without_native_id_preserves_customization(project
 
 
 def test_repeat_start_reuses_owner_without_duplicate_team_or_prompt(project, fake_herdr):
-    first = start(project, fake_herdr)
+    first = start(project, fake_herdr, "--only-role", "main")
     assert first.returncode == 0, first.stderr
     second = start(project, fake_herdr)
     assert second.returncode == 0, second.stderr
@@ -283,7 +286,7 @@ def test_repeat_start_reuses_owner_without_duplicate_team_or_prompt(project, fak
 
 
 def test_reuse_rejects_changed_owner_without_creating_replacement(project, fake_herdr):
-    result = start(project, fake_herdr)
+    result = start(project, fake_herdr, "--only-role", "main")
     assert result.returncode == 0, result.stderr
     launch = project / ".aris" / "workbench" / "launch.json"
     before = launch.read_bytes()
@@ -348,7 +351,7 @@ def test_overlapping_collaborator_scopes_fail_before_any_native_start(project, f
 
 
 def test_changed_task_skills_recovery_refreshes_context_without_overwriting_human_input(project, fake_herdr):
-    first = start(project, fake_herdr, "--model", "main=original-model", "--task", "Initial authorized task.")
+    first = start(project, fake_herdr, "--only-role", "main", "--model", "main=original-model", "--task", "Initial authorized task.")
     assert first.returncode == 0, first.stderr
     original_role = json.loads(first.stdout)["roles"]["main"]
     original_packet = Path(original_role["context"]["packet"])
@@ -390,7 +393,7 @@ def test_explicit_human_owner_is_adopted_without_prompt_or_model_replacement(pro
     }
     state["visible_input"] = "› unfinished human draft"
     fake_herdr["state"].write_text(json.dumps(state))
-    result = start(project, fake_herdr, "--owner", "human-owner", "--model", "main=other-model")
+    result = start(project, fake_herdr, "--only-role", "main", "--owner", "human-owner", "--model", "main=other-model")
     assert result.returncode == 0, result.stderr
     role = json.loads(result.stdout)["roles"]["main"]
     assert role["pane_id"] == "w3:p4"
@@ -408,7 +411,7 @@ def test_explicit_human_owner_is_adopted_without_prompt_or_model_replacement(pro
 def test_plain_reconnect_preserves_existing_assignment_and_context(project, fake_herdr):
     (project / "CURRENT.md").write_text("Current authorized task and recovery entry.\n")
     initial = start(
-        project, fake_herdr, "--task", "Keep this original assignment.",
+        project, fake_herdr, "--only-role", "main", "--task", "Keep this original assignment.",
         "--skill", "research-lit", "--recovery", "CURRENT.md",
         "--write-scope", "main=outputs/main", "--model", "main=original-model",
     )
@@ -450,7 +453,7 @@ def test_historical_inactive_writer_still_owns_its_scope(project, fake_herdr):
 
 
 def test_adding_engineer_alone_updates_existing_main_exclusion(project, fake_herdr):
-    initial = start(project, fake_herdr, "--task", "Main's original authorized task.")
+    initial = start(project, fake_herdr, "--only-role", "main", "--task", "Main's original authorized task.")
     assert initial.returncode == 0, initial.stderr
     original = json.loads(initial.stdout)["roles"]["main"]
     result = start(
@@ -470,7 +473,7 @@ def test_adding_engineer_alone_updates_existing_main_exclusion(project, fake_her
 
 
 def test_unknown_prompt_delivery_is_durable_and_reentry_does_not_resend(project, fake_herdr):
-    initial = start(project, fake_herdr, "--automation-owned", "--task", "Initial assignment.")
+    initial = start(project, fake_herdr, "--only-role", "main", "--automation-owned", "--task", "Initial assignment.")
     assert initial.returncode == 0, initial.stderr
     state = json.loads(fake_herdr["state"].read_text())
     state["lose_next_prompt_response"] = True
@@ -495,7 +498,7 @@ def test_unknown_prompt_delivery_is_durable_and_reentry_does_not_resend(project,
 
 
 def test_explicit_human_control_handoff_revokes_automation_after_identity_check(project, fake_herdr):
-    result = start(project, fake_herdr, "--automation-owned")
+    result = start(project, fake_herdr, "--only-role", "main", "--automation-owned")
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["roles"]["main"]["automation_owned"] is True
     before = json.loads(fake_herdr["state"].read_text())
@@ -514,7 +517,7 @@ def test_explicit_human_control_handoff_revokes_automation_after_identity_check(
 
 
 def test_resolved_unknown_delivery_preserves_human_draft_revocation_on_reentry(project, fake_herdr):
-    initial = start(project, fake_herdr, "--automation-owned", "--task", "Initial assignment.")
+    initial = start(project, fake_herdr, "--only-role", "main", "--automation-owned", "--task", "Initial assignment.")
     assert initial.returncode == 0, initial.stderr
     state = json.loads(fake_herdr["state"].read_text())
     state["lose_next_prompt_response"] = True

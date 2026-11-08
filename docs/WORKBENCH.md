@@ -17,8 +17,10 @@ answers them for you or blindly resends an unknown initial task.
 
 ## Explicit commands
 
-`start PROJECT --plan` previews without starting native processes. A preset
-selects available roles; explicit commands start only `main` unless selected:
+`start PROJECT --plan` previews without starting native processes. Every new
+preset defaults to main/engineer/writer: Codex/Codex/Codex, CC/Codex/CC, or
+CC/Codex/AGY. Existing and pending teams retain their original membership on
+ordinary reentry. Use `--only-role` to explicitly select a subset, as below:
 
 ```bash
 superaris start /path/to/project --session research-demo --preset cc-codex --only-role main --only-role engineer --write-scope main=notes --write-scope engineer=outputs/engineer --role-task 'engineer=Implement the assigned stage in outputs/engineer' --task 'Coordinate the existing project task' --plan

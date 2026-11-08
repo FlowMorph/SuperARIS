@@ -30,9 +30,9 @@ class Selection:
 LABELS = {"codex": "Codex", "claude": "Claude Code（CC）", "agy": "Antigravity（AGY）"}
 ROLES = {"main": "主会话：统筹、恢复与验收", "engineer": "工程：实现与事实核查", "writer": "写作：正文与解释"}
 COMBINATIONS = [
-    ("仅 Codex", "codex", [("main", "codex")]),
-    ("CC + Codex", "cc-codex", [("main", "claude"), ("engineer", "codex")]),
-    ("CC + Codex + AGY（可选 Gemini 写作）", "cc-codex-agy", [("main", "claude"), ("engineer", "codex"), ("writer", "agy")]),
+    ("仅 Codex（三角色）", "codex", [("main", "codex"), ("engineer", "codex"), ("writer", "codex")]),
+    ("CC + Codex（三角色）", "cc-codex", [("main", "claude"), ("engineer", "codex"), ("writer", "claude")]),
+    ("CC + Codex + AGY（三角色）", "cc-codex-agy", [("main", "claude"), ("engineer", "codex"), ("writer", "agy")]),
 ]
 
 
@@ -113,19 +113,23 @@ def _preview_pad(text: str, width: int) -> str:
 
 def layout(roles: list[tuple[str, str]]) -> None:
     print(tr("\n分工与布局预览："))
+    clients = {role: {"claude": "CC", "codex": "Codex", "agy": "AGY"}[kind] for role, kind in roles}
+    main = tr("主会话") + " / " + clients.get("main", "")
+    engineer = tr("工程") + " / " + clients.get("engineer", "")
+    writer = tr("写作") + " / " + clients.get("writer", "")
     if len(roles) == 3:
         print("┌────────────────────┬──────────────────────┐")
-        print(f"│ {_preview_pad(tr('主会话') + ' / CC', 19)}│ {_preview_pad(tr('工程') + ' / Codex', 21)}│")
+        print(f"│ {_preview_pad(main, 19)}│ {_preview_pad(engineer, 21)}│")
         print("│                    ├──────────────────────┤")
-        print(f"│                    │ {_preview_pad(tr('写作') + ' / AGY', 21)}│")
+        print(f"│                    │ {_preview_pad(writer, 21)}│")
         print("└────────────────────┴──────────────────────┘")
     elif len(roles) == 2:
         print("┌────────────────────┬──────────────────────┐")
-        print(f"│ {_preview_pad(tr('主会话') + ' / CC', 19)}│ {_preview_pad(tr('工程') + ' / Codex', 21)}│")
+        print(f"│ {_preview_pad(main, 19)}│ {_preview_pad(engineer, 21)}│")
         print("└────────────────────┴──────────────────────┘")
     else:
         print("┌───────────────────────────────────────────┐")
-        print(f"│ {_preview_pad(tr('主会话') + ' / Codex', 42)}│")
+        print(f"│ {_preview_pad(main, 42)}│")
         print("└───────────────────────────────────────────┘")
 
 
@@ -222,7 +226,7 @@ def run() -> Selection | None:
             options = []
             usable = []
             for label, _, roles in COMBINATIONS:
-                missing = [tr(LABELS[kind]) for _, kind in roles if not available[kind]]
+                missing = [tr(LABELS[kind]) for kind in dict.fromkeys(kind for _, kind in roles) if not available[kind]]
                 usable.append(not missing)
                 options.append(tr(label) + (tr("（缺少 {missing}，暂不可用）", missing=(", " if ui.language == "en" else "、").join(missing)) if missing else ""))
             if not any(usable):
@@ -260,7 +264,7 @@ def run() -> Selection | None:
                 print(f"  {ui.role_label(role)} / {tr(LABELS[kind])} / {chosen[role] or tr('沿用 CLI 配置')} → {scope}")
             print(tr("任务：{task}", task=task or tr("暂不安排，进入后再告诉主会话")))
             print(tr("将打开所选工作台，加载项目与 ARIS 技能，并接收协作者后续结果。"))
-            if len(roles) > 1:
+            if any(kind in {"claude", "agy"} for _, kind in roles):
                 print(tr("CC/AGY 收到后续结果时会提示你查看。"))
             ready = dependency_summary(available)
             action = choose(tr("请选择"), [tr("启动"), tr("返回修改"), tr("取消")])
@@ -270,13 +274,14 @@ def run() -> Selection | None:
                 return None
             arguments = ["start", str(project), "--session", session_name(project), "--preset", preset, "--name", name]
             waiting = "Read this project's role packet and selected ARIS skills, then wait for the user's concrete task. Do not start a research pipeline, workflow, model delegation or Goal."
+            collaborator_waiting = "Read this project's role packet and selected ARIS skills, then wait for the main owner's scoped assignment. Do not execute the main task or edit project artifacts yet."
             arguments += ["--task", task or waiting]
             for role, _ in roles:
                 arguments += ["--only-role", role]
                 if chosen[role]:
                     arguments += ["--model", f"{role}={chosen[role]}"]
                 if role != "main":
-                    arguments += ["--write-scope", f"{role}=outputs/{role}", "--role-task", f"{role}={waiting}"]
+                    arguments += ["--write-scope", f"{role}=outputs/{role}", "--role-task", f"{role}={collaborator_waiting}"]
             return Selection(arguments, not project.exists(), ui_language=ui.language)
         except Back:
             print(tr("\n返回项目选择；此前未启动会话或写入项目。"))

@@ -9,8 +9,9 @@ state machine.
 
 ## A complete receiving chain
 
-Start the owner and an optional collaborator with distinct assignments and
-disjoint write directories. Only `main` starts unless `--only-role` is repeated.
+New workbenches default to `main`, `engineer` and `writer`. The example below
+explicitly selects an owner and one collaborator with distinct assignments and
+disjoint write directories by repeating `--only-role`.
 Without a `--role-task`, a collaborator reads context and waits for a scoped
 assignment. `--write-scope` supplies an ownership instruction, not an OS sandbox.
 

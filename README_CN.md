@@ -22,7 +22,7 @@ SuperARIS 基于 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-
 
 主 Agent 把握研究方向、组织分工并回收成果。Codex 可以实现实验与核查证据，Gemini 可以共同讨论立意、组织论证并主写论文正文。每个成员都有自己的常驻会话，你可以直接与它共创，让讨论接着已有上下文继续。
 
-可以先用 Codex 独立工作，再按需要选择 Claude Code 主控与 Codex 工程组合，或加入 Antigravity 写作角色。实际模型沿用你的 CLI 配置；临时 MCP worker 和需要全新上下文的独立 reviewer 继续在后台协作。
+新团队统一有主 Agent、工程与写作三个角色：可选全部 Codex、Claude Code 主控/写作配 Codex 工程，或 Claude Code / Codex / Antigravity。每个角色仍可选择自己的模型；临时 MCP worker 和需要全新上下文的独立 reviewer 继续在后台协作。
 
 ## 每个成员都能使用 ARIS
 
@@ -61,11 +61,13 @@ superaris
 
 选择界面语言、项目、团队和模型，确认后进入工作台。可以直接给主 Agent 一个任务，也可以先打开团队，再讨论要做什么。界面语言与论文、任务语言分别选择。
 
-| 团队组合 | 常驻角色 |
-|---|---|
-| Codex | Codex 主 Agent |
-| Claude Code + Codex | 主 Agent 与工程协作者 |
-| Claude Code + Codex + Antigravity | 主 Agent、工程与写作协作者 |
+| 团队组合 | 主 Agent | 工程 | 写作 |
+|---|---|---|---|
+| Codex | Codex | Codex | Codex |
+| Claude Code + Codex | Claude Code | Codex | Claude Code |
+| Claude Code + Codex + Antigravity | Claude Code | Codex | Antigravity |
+
+新工作台采用相同的三窗格布局；已有团队和待完成启动保持原选择，`--only-role` 可明确选择子集。
 
 SuperARIS 在需要时获取固定版本的 ARIS 资源；已有 ARIS 源码和定制技能可按文档选择来源。[依赖与更新 →](docs/DEPENDENCIES.md)
 

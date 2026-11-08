@@ -50,10 +50,12 @@ can continue while Herdr stays open once the user clears a native wait. Keep
 original owners, writing scopes and unknown delivery state; do not resend an
 uncertain initial prompt. A changed owner requires explicit reconciliation.
 
-`--preset codex` offers main Codex; `cc-codex` adds a Codex engineer to a CC
-owner; `cc-codex-agy` adds an AGY writer. Role, harness and model are separate;
-CC does not imply a particular provider. The wizard activates its selected
-combination; explicit CLI presets start only main unless roles are selected:
+Every new preset starts `main`, `engineer` and `writer`: `codex` maps all
+three to Codex; `cc-codex` uses CC / Codex / CC; `cc-codex-agy` uses
+CC / Codex / AGY. Role, harness and model are separate; CC does not imply a
+particular provider. Collaborators read their own context and wait for main.
+Ordinary reentry retains recorded or pending membership. Repeat `--only-role`
+to explicitly select a subset, as in this two-role example:
 
 ```bash
 superaris start /path/to/project --session research-demo --preset cc-codex --only-role main --only-role engineer --write-scope main=notes --write-scope engineer=outputs/engineer --role-task 'engineer=Analyze existing results into outputs/engineer' --task 'Coordinate the existing project task' --plan

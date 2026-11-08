@@ -86,7 +86,7 @@ def test_adopted_owner_retains_legacy_name_and_original_topology(project, fake_h
         "argv": ["codex", "--cd", str(project)], "cwd": str(project.parent),
     }
     fake_herdr["state"].write_text(json.dumps(state))
-    result = team_start(project, fake_herdr, "--owner", "legacy-owner")
+    result = team_start(project, fake_herdr, "--only-role", "main", "--owner", "legacy-owner")
     assert result.returncode == 0, result.stderr
     owner = json.loads(result.stdout)["roles"]["main"]
     assert owner["name"] == "legacy-owner"

@@ -170,7 +170,7 @@ def select_project(term, project):
 def summary(term, combo="3", task="", models=None):
     term.expect("客户端组合")
     term.line(combo)
-    for model_choice in models or [""] * int(combo):
+    for model_choice in models or [""] * 3:
         term.expect("模型选择")
         term.line(model_choice)
     term.expect("工作台名称")
@@ -267,8 +267,9 @@ def test_summary_return_can_clear_previous_task_without_creating_project(environ
     select_project(term, path)
     term.expect("客户端组合")
     term.line("1")
-    term.expect("模型选择")
-    term.line()
+    for _ in range(3):
+        term.expect("模型选择")
+        term.line()
     term.expect("工作台名称")
     term.line()
     term.expect("任务安排")
@@ -303,6 +304,7 @@ def test_actual_terminal_confirmation_reaches_existing_runtime_with_three_active
     assert "wait for the user's concrete task" in bound["roles"]["main"]["inputs"]["task"]
     for role in ("engineer", "writer"):
         assert bound["roles"][role]["inputs"]["write_scope"] == str(path / "outputs" / role)
+        assert "wait for the main owner's scoped assignment" in bound["roles"][role]["inputs"]["task"]
     live = receiver.status(path)
     assert live["managed_process_alive"] is True
     assert live["status"] == "running"
@@ -439,7 +441,7 @@ def test_explicit_human_control_clears_prepared_codex_bootstrap_before_reentry(e
     state.update(block_next_start=True, block_kind="codex")
     environment["state"].write_text(json.dumps(state))
     arguments = [*SUPERARIS, "start", str(project), "--session", "prepared-bootstrap",
-                 "--no-install", "--no-attach", "--no-receiver"]
+                 "--no-install", "--no-attach", "--no-receiver", "--only-role", "main"]
     failed = subprocess.run(arguments, env=environment["env"], capture_output=True, text=True, timeout=20)
     assert failed.returncode != 0
     launch = project / ".aris/workbench/launch.json"

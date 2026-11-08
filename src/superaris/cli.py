@@ -7,10 +7,34 @@ from pathlib import Path
 import sys
 
 PRESETS = {
-    "codex": {"main": "codex"},
-    "cc-codex": {"main": "claude", "engineer": "codex"},
+    "codex": {"main": "codex", "engineer": "codex", "writer": "codex"},
+    "cc-codex": {"main": "claude", "engineer": "codex", "writer": "claude"},
     "cc-codex-agy": {"main": "claude", "engineer": "codex", "writer": "agy"},
 }
+
+
+class _ArgumentParser(argparse.ArgumentParser):
+    def parse_args(self, args=None, namespace=None):
+        raw = list(sys.argv[1:] if args is None else args)
+        parsed = super().parse_args(raw, namespace)
+        if parsed.command == "start" and parsed.project is not None:
+            # Recovery can be opened from another cwd. Keep the wizard's
+            # canonical prefix and serialize the parsed options unchanged.
+            canonical = ["start", str(parsed.project.expanduser().resolve())]
+            for action in self.start_parser._actions:
+                if not action.option_strings:
+                    continue
+                value = getattr(parsed, action.dest, None)
+                if value is None or value is False:
+                    continue
+                flag = action.option_strings[-1]
+                if value is True:
+                    canonical.append(flag)
+                else:
+                    for item in value if isinstance(value, list) else [value]:
+                        canonical.extend([flag, str(item)])
+            parsed.start_arguments = canonical
+        return parsed
 
 
 def assignments(values: list[str]) -> dict[str, str]:
@@ -27,42 +51,60 @@ def make_plan(args: argparse.Namespace) -> dict:
     project = args.project.expanduser().resolve()
     if not project.is_dir():
         raise ValueError(f"project directory does not exist: {project}")
-    roles = {**PRESETS[args.preset], **assignments(args.role)}
-    models = assignments(args.model)
+    from .state import directory, read
+    current = read(directory(project) / "launch.json", {})
+    pending = current.get("pending_start", {})
+    remembered = ({item["role"]: item for item in pending.get("roles", [])}
+                  if pending else current.get("roles", {}))
+    preset = args.preset or current.get("preset", "codex")
+    # New defaults do not migrate an existing or unfinished team. An explicit
+    # role selection (or a different preset) is the existing opt-in expansion.
+    retain_team = bool(remembered) and not args.role and args.only_role is None and (
+        args.preset is None or args.preset == current.get("preset"))
+    roles = ({role: record["harness"] for role, record in remembered.items()}
+             if retain_team else {**PRESETS[preset], **assignments(args.role)})
+    inherited = remembered if retain_team else {}
+    models = {role: record.get("model", record.get("requested_model"))
+              for role, record in inherited.items()}
+    models.update(assignments(args.model))
     role_tasks = assignments(args.role_task)
     scopes = assignments(args.write_scope)
-    selected = args.only_role or ["main"]
+    selected = args.only_role if args.only_role is not None else list(roles)
     if (set(selected) | models.keys() | role_tasks.keys() | scopes.keys()) - roles.keys():
         raise ValueError("role/model selection names a role outside the preset or --role entries")
     if any(kind not in {"codex", "claude", "agy"} for kind in roles.values()):
         raise ValueError("supported harnesses: codex, claude, agy")
     return {
         "mode": "plan", "project": str(project), "session": args.session,
-        "preset": args.preset, "task": args.task or "Recover this project and continue only its already authorized work.",
+        "preset": preset, "task": args.task or inherited.get("main", {}).get("task") or inherited.get("main", {}).get("inputs", {}).get("task") or "Recover this project and continue only its already authorized work.",
         "skills": args.skill or ["project-agent"],
         "roles": [{"role": role, "harness": kind, "model": models.get(role),
-                   "task": role_tasks.get(role, (args.task or "Recover this project and continue only its already authorized work.") if role == "main" else
-                       "Read your context and wait for the main owner's scoped assignment. Do not execute the main task or edit project artifacts yet."),
-                   "write_scope": str((project / scopes.get(role, "." if role == "main" else
-                       f".aris/workbench/outputs/{role}")).resolve()),
+                   "task": role_tasks.get(role, (args.task if role == "main" else None)
+                       or inherited.get(role, {}).get("task") or inherited.get(role, {}).get("inputs", {}).get("task")
+                       or ("Recover this project and continue only its already authorized work." if role == "main" else
+                           "Read your context and wait for the main owner's scoped assignment. Do not execute the main task or edit project artifacts yet.")),
+                   "write_scope": str((project / scopes.get(role,
+                       inherited.get(role, {}).get("write_scope") or inherited.get(role, {}).get("inputs", {}).get("write_scope")
+                       or ("." if role == "main" else f".aris/workbench/outputs/{role}"))).resolve()),
                    "active": role in selected} for role, kind in roles.items()],
         "will_mutate": False,
     }
 
 
 def parser(prog: str = "superaris") -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog=prog, description="SuperARIS project workbench: native owners, ARIS skills and existing MCP collaboration.",
+    p = _ArgumentParser(prog=prog, description="SuperARIS project workbench: native owners, ARIS skills and existing MCP collaboration.",
                                 epilog="交互启动 / Interactive: superaris (or superaris start). 脚本用法 / Scripts: superaris start PROJECT [options].")
     sub = p.add_subparsers(dest="command", required=True)
     s = sub.add_parser("start", help="start or reconnect the selected project owners")
+    p.start_parser = s
     s.add_argument("project", type=Path, nargs="?")
     s.add_argument("--name", help="readable new workbench name; existing owners are not renamed")
     s.add_argument("--plan", action="store_true", help="offline preview; no writes or processes")
     s.add_argument("--session", default="aris", help="explicit local Herdr session (default: aris)")
     s.add_argument("--owner", help="explicit existing main agent name/pane to adopt after verification")
-    s.add_argument("--preset", choices=PRESETS, default="codex")
+    s.add_argument("--preset", choices=PRESETS, help="new-team mapping (default: codex); reconnect preserves the recorded team")
     s.add_argument("--role", action="append", default=[], metavar="ROLE=HARNESS")
-    s.add_argument("--only-role", action="append", choices=None, help="activate listed roles; default main only")
+    s.add_argument("--only-role", action="append", choices=None, help="activate only the listed roles; new teams default to main, engineer and writer")
     s.add_argument("--model", action="append", default=[], metavar="ROLE=MODEL")
     s.add_argument("--skill", action="append", default=[])
     s.add_argument("--aris-repo", type=Path, help="explicit canonical ARIS checkout; otherwise use the pinned product cache")

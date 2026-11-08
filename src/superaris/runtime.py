@@ -100,8 +100,9 @@ def start(plan: dict, args, *, stop_event=None) -> dict:
             selected_roles = [item for item in selected_roles if item["role"] != "main"]
             selected_roles.insert(0, {"role": "main", "harness": current["roles"]["main"]["harness"],
                                      "active": True, "model": None, "task": plan["task"], "write_scope": str(project)})
+        pending_roles = {item["role"]: item for item in current.get("pending_start", {}).get("roles", [])}
         for item in selected_roles:
-            previous = current["roles"].get(item["role"], {}).get("inputs", {})
+            previous = current["roles"].get(item["role"], {}).get("inputs", {}) or pending_roles.get(item["role"], {})
             if item["role"] not in explicit_tasks and (item["role"] != "main" or args.task is None):
                 item["task"] = previous.get("task", item["task"])
             if item["role"] not in explicit_scopes:
@@ -122,6 +123,16 @@ def start(plan: dict, args, *, stop_event=None) -> dict:
                 first, second = Path(item["write_scope"]), Path(other["write_scope"])
                 if first.is_relative_to(second) or second.is_relative_to(first):
                     raise ValueError("Collaborator write scopes overlap; assign disjoint directories or worktrees")
+        if not current.get("pending_start") and any(
+                item["active"] and item["role"] not in current["roles"] for item in selected_roles):
+            # Record the complete confirmed team before a native start can
+            # create a process and lose its response. A partial binding alone
+            # is not evidence that the original team had only one role.
+            current["pending_start"] = {
+                "arguments": args.start_arguments,
+                "roles": [dict(item) for item in selected_roles if item["active"]],
+            }
+            save_binding(project, current)
         for selected in selected_roles:
             if stop_event is not None and stop_event.is_set():
                 actions.append({"action": "startup_paused"})
@@ -240,6 +251,13 @@ def start(plan: dict, args, *, stop_event=None) -> dict:
                 raise
             save_binding(project, current)
             actions.append({"role": role, "action": "started", "pane_id": pane, "packet": context["packet"]})
+        pending = current.get("pending_start")
+        if pending and stop_event is None and all(
+                current["roles"].get(item["role"], {}).get("pid") for item in pending["roles"]):
+            # Membership is now verified. Unknown context delivery remains in
+            # each original role record; clearing startup intent is not receipt
+            # acceptance. Interactive startup keeps its existing completion path.
+            current.pop("pending_start", None)
         save_binding(project, current)
     return {"mode": "running", "project": str(project), "session": client.session,
             "actions": actions, "roles": current["roles"], "acceptance": "not_evaluated"}
