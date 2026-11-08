@@ -1,52 +1,83 @@
-# SuperARIS
+[![SuperARIS — Your personal research agent with ARIS (Auto Research In Sleep, ~20k stars), powered by a team of agents.](assets/superaris-banner.png)](https://wanshuiyin.github.io/SuperARIS/)
 
-SuperARIS — Your personal research agent with ARIS, powered by a team of agents.
+**SuperARIS — Your personal research agent with ARIS (Auto Research In Sleep, ~20k stars), powered by a team of agents.**
 
-[简体中文](README_CN.md) · **v0.1.0 preview** · [Interactive walkthrough](https://wanshuiyin.github.io/SuperARIS/)
+[![Homepage](https://img.shields.io/badge/Homepage-Live_demo-d9b98c?style=for-the-badge)](https://wanshuiyin.github.io/SuperARIS/) [![Built on ARIS](https://img.shields.io/badge/Built_on-ARIS-455299?style=for-the-badge)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite_ARIS-BibTeX-556b52?style=for-the-badge)](#cite-aris)
 
-Discuss a research goal with your main agent. Let it organize engineering,
-writing and review, inspect the actual results, take over when you want, and
-continue the same project next time.
+[简体中文](README_CN.md) · **v0.1.0 preview** · [Install](#install-and-open) · [Guides](#guides) · [MIT](LICENSE)
 
-SuperARIS brings [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)
-research workflows into visible, persistent [Herdr](https://herdr.dev) sessions.
-Your main agent retains the direction, authorization and acceptance criteria.
-Start with one owner and add collaborators when the task needs them. Existing
-MCP workers, asynchronous jobs and fresh reviewers keep their own execution paths.
+[![Research teamwork in action — English animated preview](assets/demo-en.gif)](https://wanshuiyin.github.io/SuperARIS/media/demo-en.mp4)
 
-1. **Discuss the goal.** Choose a project and tell the main agent what you want
-   to investigate or produce. An empty task leaves the workbench waiting for you.
-2. **Organize the work.** Run a complete ARIS pipeline, one workflow or an
-   individual skill. Assign engineering, writing and checking to suitable roles
-   with separate writing areas; preserve independent review.
-3. **See results and take over.** Inspect files, checks and reviewer replies.
-   Registered results reach the owner; a completion signal prompts verification.
-   Native sessions stay visible and human input stays human-owned by default.
-4. **Continue later.** Reopen the project, recover its original owner and current
-   records, then continue the next authorized step.
+**[▶ Watch the full 1080p demo · ≈21 seconds](https://wanshuiyin.github.io/SuperARIS/media/demo-en.mp4)**
+
+*Animated preview · click to play the full video. Illustrative project and data.*
+
+Discuss a research goal with your personal agent. It organizes a persistent team, delegates work, checks incoming results, and keeps track of what should happen next. Join any teammate's session to explore an idea, refine a draft, or take over.
+
+Built on [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) (Auto Research In Sleep, ~20k GitHub stars), SuperARIS equips each role with the research workflows and project context it needs. The team works within one project, with clear responsibilities and a record you can return to tomorrow.
+
+## One personal agent, a persistent team
+
+Your main agent holds the research direction and coordinates the work. Codex can implement experiments and check evidence; Gemini can discuss the argument and write substantial paper sections. Each collaborator has its own ongoing session, so you can work directly with the teammate you need and continue the discussion where you left off.
+
+Start with Codex alone, add a Claude Code main agent with Codex engineering, or include an Antigravity writing role. Choose models through your own CLI configuration. Temporary MCP workers and fresh reviewers remain available alongside the persistent team.
+
+## ARIS for every teammate
+
+Each role receives its task, working area, ARIS navigation, and the relevant skills to read before acting. Ask the main agent to run a complete pipeline, delegate a connected workflow, or use one skill for a focused task.
+
+| What you need | ARIS entry |
+|---|---|
+| Carry a research project from idea to paper | [research-pipeline](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/research-pipeline/SKILL.md) |
+| Develop and test a research direction | [idea-discovery](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/idea-discovery/SKILL.md) |
+| Implement the experiment plan and collect results | [experiment-bridge](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/experiment-bridge/SKILL.md) |
+| Review, revise, and check the research again | [auto-review-loop](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/auto-review-loop/SKILL.md) |
+| Turn checked findings into a paper | [paper-writing](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/paper-writing/SKILL.md) |
+
+These use your configured tools and keep ARIS's review and acceptance criteria. [Skills and project context →](docs/PROJECT_CONTEXT.md)
+
+## Follow up on the work
+
+SuperARIS tracks registered tasks, result files, and reports while the original main session is running—even after you close the workbench window. Your main agent uses those updates to collect finished work, check the evidence, and continue the next authorized step.
+
+Human-controlled sessions receive notices; dedicated Codex sessions can use automatic follow-up. [Receiving results and continuing work →](docs/RESULTS_AND_MEMORY.md)
+
+## Long-term project memory
+
+Keep the project's goals, decisions, corrections, results, and next actions in its existing notes and research wiki. Agents update these records as the work progresses and read them back when resuming. The context stays with the project across days and sessions, in files you can inspect and edit.
+
+Reopen a running team to continue its conversations, or give a new session the project's recovery entry. [Context and recovery →](docs/PROJECT_CONTEXT.md)
 
 ## Install and open
 
-Requires **Python ≥3.10 on macOS or Linux**, Herdr, and the native CLIs you choose
-(`codex`, `claude`, `agy`). Configure model access/login in those native tools.
-CLI detection does not verify login or model availability. No model credentials
-are requested by the SuperARIS wizard.
-
-Install from this Git repository with [pipx](https://pipx.pypa.io):
+Requires Python 3.10+ on macOS or Linux, [Herdr](https://herdr.dev), and your chosen native CLIs (`codex`, `claude`, `agy`) with model access configured.
 
 ```bash
 pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'
 superaris
 ```
 
-This preview is not published to PyPI. To install a locally built wheel instead:
+Choose the interface language, project, team, and models, then confirm the workspace. Give the main agent a task, or open the team and discuss what to do next. The interface language is independent of your paper or task language.
+
+| Team | Persistent roles |
+|---|---|
+| Codex | Codex main agent |
+| Claude Code + Codex | Main agent and engineering collaborator |
+| Claude Code + Codex + Antigravity | Main agent, engineering, and writing collaborator |
+
+SuperARIS obtains its pinned ARIS resources when needed. Existing ARIS installations and custom skills can be used through the documented source selection. [Dependencies and updates →](docs/DEPENDENCIES.md)
+
+<details>
+<summary>Other installation options and an existing ARIS checkout</summary>
+
+Local wheel (including offline installation):
 
 ```bash
 python3 -m pip install --no-index --no-deps /path/to/superaris-0.1.0-py3-none-any.whl
 python3 -m superaris
 ```
 
-For a checkout installation in an isolated environment:
+Checkout in an isolated environment:
 
 ```bash
 git clone https://github.com/wanshuiyin/SuperARIS.git
@@ -56,83 +87,34 @@ python3 -m venv .venv
 .venv/bin/superaris
 ```
 
-The first screen offers **简体中文 / English**, followed by project, clients,
-models per role, layout and an optional task. Review the summary and launch,
-go back or cancel. New project directories are created only after confirmation.
-From a bound project directory, the first screen defaults to its saved UI
-language (still adjustable), then offers the original workbench and owner. Native
-login or trust prompts remain for you to handle; startup can continue while Herdr is open.
-
-The package bundles its own project-agent resources. When a confirmed launch or
-`context` preparation needs ARIS, SuperARIS lazily acquires a fixed public ARIS
-revision into `$XDG_CACHE_HOME/superaris/aris/<commit>` or
-`~/.cache/superaris/aris/<commit>` when XDG_CACHE_HOME is unset. A bound project
-retains its chosen `aris_repo` for future context preparation. Help, plans,
-wizard choices and cancellation do not fetch it. To use an existing ARIS checkout explicitly:
+Select an existing ARIS source explicitly:
 
 ```bash
 SUPERARIS_ARIS_REPO=/path/to/aris superaris
 ```
 
-See [dependencies and updates](docs/DEPENDENCIES.md) for the pin, cache and
-source precedence. No global skills installation or model/MCP rewrite is needed.
+Help, plans and wizard cancellation do not fetch ARIS. See [source selection](docs/DEPENDENCIES.md) for the fixed revision, local cache and existing receiver compatibility.
 
-## Choose your team
-
-| Option | Visible roles |
-|---|---|
-| Codex | A Codex project owner |
-| CC + Codex | Claude Code owner and Codex engineering |
-| CC + Codex + AGY | Above, with an Antigravity writing role |
-
-Roles, CLI harnesses and models are separate. Claude Code can use the user's
-configured provider; no DeepSeek or Claude model is imposed. Gemini can do
-substantive drafting while Codex establishes facts and checks the result.
-Temporary workers and fresh reviewers can continue through the original MCPs.
-
-```text
-+-------------------+----------------------+
-| main owner        | engineer / Codex     |
-| goal/integration  +----------------------+
-|                   | writer / AGY         |
-+-------------------+----------------------+
-```
-
-This layout applies to newly created workbenches. Adopted owners retain their
-existing labels and layout; collaborators activate only when selected.
-
-For optional inspection, `superaris receiver PROJECT --action status` shows the
-receiver and `superaris reconcile PROJECT` checks registered results.
-`superaris context PROJECT --role ROLE --skill NAME` prepares additional skill
-material; it does not dispatch work. Normal use can stay in conversation with
-the main agent. See the guides below for details.
-
-## Preview boundaries
-
-The receiver follows registered results for one project and its original main
-identity. Detaching Herdr leaves it active; the main ending/changing, server
-unavailability or an explicit stop ends it. It does not recreate agents around
-the clock. Human-owned inputs get notices; CC/AGY follow-up is notice-based.
-Dedicated Codex automation has a best-effort input guard, not atomic protection
-against concurrent human typing.
-
-Memory uses original project records and explicit correction/decision/delivery
-updates. This preview has no cross-project personal hub, automatic preference
-learning, permanent model memory or fourth discussion role. UI language does
-not set paper/task language or translate native clients. Project scope,
-reviewer freshness, budgets, paused Goals and publication permissions remain
-those of the original task.
-
-A local legacy launcher may still point to a previous adaptation checkout.
-Test the independent install in an isolated environment first; do not run two
-receiver versions against the same active project.
+</details>
 
 ## Guides
 
-- [Workbench, roles and human handoff](docs/WORKBENCH.md)
-- [Skills, context and recovery](docs/PROJECT_CONTEXT.md)
-- [Registered results and explicit memory](docs/RESULTS_AND_MEMORY.md)
-- [ARIS source, dependencies and updates](docs/DEPENDENCIES.md)
+- [Workbench, roles, and human handoff](docs/WORKBENCH.md)
+- [Skills, context, and recovery](docs/PROJECT_CONTEXT.md)
+- [Follow-up and project memory](docs/RESULTS_AND_MEMORY.md)
+- [ARIS source, dependencies, and updates](docs/DEPENDENCIES.md)
 
-SuperARIS builds on ARIS and Herdr; see [LICENSE](LICENSE) and [NOTICE](NOTICE)
-for licensing and attribution.
+## Cite ARIS
+
+SuperARIS builds on ARIS's research workflows, review mechanisms, and project knowledge. If you use this foundation in your research, please cite the [ARIS technical report](https://arxiv.org/abs/2605.03042):
+
+```bibtex
+@article{yang2026aris,
+  title={ARIS: Autonomous Research via Adversarial Multi-Agent Collaboration},
+  author={Yang, Ruofeng and Li, Yongcan and Li, Shuai},
+  journal={arXiv preprint arXiv:2605.03042},
+  year={2026}
+}
+```
+
+Thanks to [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) for the research foundation and [Herdr](https://herdr.dev) for the persistent native sessions. SuperARIS is [MIT licensed](LICENSE); source attribution is preserved in [NOTICE](NOTICE).

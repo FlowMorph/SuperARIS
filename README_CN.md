@@ -1,43 +1,85 @@
-# SuperARIS
+[![SuperARIS — Your personal research agent with ARIS (Auto Research In Sleep, ~20k stars), powered by a team of agents.](assets/superaris-banner.png)](https://wanshuiyin.github.io/SuperARIS/)
 
-SuperARIS — Your personal research agent with ARIS, powered by a team of agents.
+**SuperARIS — Your personal research agent with ARIS (Auto Research In Sleep, ~20k stars), powered by a team of agents.**
 
-[English](README.md) · **v0.1.0 预览版** · [交互演示首页](https://wanshuiyin.github.io/SuperARIS/)
+**你的个人科研 Agent，基于 ARIS，由一支常驻 Agent 团队协作推进。**
 
-和主 Agent 讨论科研目标，让它组织工程、写作与独立审阅；查看实际成果，
-随时人工接手，下次回到同一项目继续。
+[![Homepage](https://img.shields.io/badge/Homepage-Live_demo-d9b98c?style=for-the-badge)](https://wanshuiyin.github.io/SuperARIS/) [![Built on ARIS](https://img.shields.io/badge/Built_on-ARIS-455299?style=for-the-badge)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite_ARIS-BibTeX-556b52?style=for-the-badge)](#cite-aris)
 
-SuperARIS 用 [Herdr](https://herdr.dev) 承载可见、常驻的原生会话，用
-[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) 提供科研技能与工作流。
-主 Agent 负责方向、授权和验收；从一个 owner 开始，按任务需要增加协作者。
-原有 MCP worker、异步作业和 fresh reviewer 继续沿用各自协议。
+[English](README.md) · **v0.1.0 预览版** · [安装](#安装与启动) · [使用文档](#使用文档) · [MIT](LICENSE)
 
-1. **讨论目标。** 选项目，告诉主 Agent 要研究或交付什么；不填任务就等待用户。
-2. **组织工作。** 可用完整 pipeline、workflow 或单个 skill；工程、写作、核查各有独占写域，独立审阅保持 fresh。
-3. **查看成果、人工接手。** 收件后读实际文件、检查与 reviewer 回复；完成状态提示验收，不替代验收。会话可见，人工输入默认由人工掌控。
-4. **下次继续。** 重新打开项目，恢复原 owner 和现有记录，推进下一项已授权工作。
+[![看看团队怎样推进研究 — 中文动图预览](assets/demo-zh.gif)](https://wanshuiyin.github.io/SuperARIS/media/demo-zh.mp4)
+
+**[▶ 播放完整 1080p 中文演示 · 约21秒](https://wanshuiyin.github.io/SuperARIS/media/demo-zh.mp4)**
+
+*动图预览，点击播放高清完整版。示例项目与数据。*
+
+和你的个人 Agent 讨论科研目标，让它组织团队、分配工作、核验成果，并跟进下一步。想深入讨论一个想法、共同修改一段正文，或亲自接手时，直接进入相应成员的会话。
+
+SuperARIS 基于 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)（Auto Research In Sleep，约 2 万 GitHub stars），为每个角色提供所需的科研流程与项目上下文。团队围绕同一个项目持续协作，分工清楚，研究记录随项目保存，明天回来还能接着做。
+
+## 一个个人 Agent，一支持续协作的团队
+
+主 Agent 把握研究方向、组织分工并回收成果。Codex 可以实现实验与核查证据，Gemini 可以共同讨论立意、组织论证并主写论文正文。每个成员都有自己的常驻会话，你可以直接与它共创，让讨论接着已有上下文继续。
+
+可以先用 Codex 独立工作，再按需要选择 Claude Code 主控与 Codex 工程组合，或加入 Antigravity 写作角色。实际模型沿用你的 CLI 配置；临时 MCP worker 和需要全新上下文的独立 reviewer 继续在后台协作。
+
+## 每个成员都能使用 ARIS
+
+各角色拿到自己的任务、工作范围、ARIS 导航和所需技能，在执行时读取相应流程。你可以让主 Agent 推进完整科研 pipeline，把一段 workflow 委派给协作者，也可以只调用一个 skill 处理眼前的问题。
+
+| 你想做什么 | ARIS 入口 |
+|---|---|
+| 从研究方向推进到论文 | [research-pipeline](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/research-pipeline/SKILL.md) |
+| 寻找、筛选并验证研究想法 | [idea-discovery](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/idea-discovery/SKILL.md) |
+| 实现实验计划并收集结果 | [experiment-bridge](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/experiment-bridge/SKILL.md) |
+| 迭代审阅、修订和复核 | [auto-review-loop](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/auto-review-loop/SKILL.md) |
+| 将核验过的成果写成论文 | [paper-writing](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/paper-writing/SKILL.md) |
+
+这些流程使用你已配置的工具，并保留 ARIS 原有的审阅和验收要求。[技能与项目上下文 →](docs/PROJECT_CONTEXT.md)
+
+## 主动跟进工作
+
+项目运行期间，SuperARIS 跟踪已登记的任务、结果文件和交付报告。原主会话仍在运行时，关闭工作台窗口也不打断跟进。主 Agent 根据这些更新收回完成的工作、核对证据，再推进下一项已授权步骤。
+
+人工掌控的会话通过通知收件；专门交给自动化的 Codex 会话可以自动接收后续提示。[收件与工作接续 →](docs/RESULTS_AND_MEMORY.md)
+
+## 长期项目记忆
+
+目标、决定、纠正、结果和下一步，保存在项目原有的笔记与 research wiki 中。Agent 随工作更新这些记录，恢复时重新读回。研究上下文跨天、跨会话留在项目里，你也可以直接查看和修改这些文件。
+
+原团队仍在运行时，重新打开即可继续对话；换一个新会话，也能从项目恢复入口接上已有工作。[上下文与恢复 →](docs/PROJECT_CONTEXT.md)
 
 ## 安装与启动
 
-需要 **Python ≥3.10、macOS 或 Linux**、Herdr，以及选用的原生 CLI
-（`codex`、`claude`、`agy`）。在原生工具里配置模型与登录；检测到 CLI
-不代表已登录或模型可用。SuperARIS 向导不索取模型密钥。
-
-用 [pipx](https://pipx.pypa.io) 从本仓库安装：
+需要 Python 3.10+、macOS 或 Linux、[Herdr](https://herdr.dev)，以及配置好模型访问的所选原生 CLI（`codex`、`claude`、`agy`）。
 
 ```bash
 pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'
 superaris
 ```
 
-预览版尚未发布到 PyPI。本地构建的 wheel 也可安装：
+选择界面语言、项目、团队和模型，确认后进入工作台。可以直接给主 Agent 一个任务，也可以先打开团队，再讨论要做什么。界面语言与论文、任务语言分别选择。
+
+| 团队组合 | 常驻角色 |
+|---|---|
+| Codex | Codex 主 Agent |
+| Claude Code + Codex | 主 Agent 与工程协作者 |
+| Claude Code + Codex + Antigravity | 主 Agent、工程与写作协作者 |
+
+SuperARIS 在需要时获取固定版本的 ARIS 资源；已有 ARIS 源码和定制技能可按文档选择来源。[依赖与更新 →](docs/DEPENDENCIES.md)
+
+<details>
+<summary>其它安装方式与已有 ARIS 源码</summary>
+
+安装本地 wheel（也适用于离线安装）：
 
 ```bash
 python3 -m pip install --no-index --no-deps /path/to/superaris-0.1.0-py3-none-any.whl
 python3 -m superaris
 ```
 
-或在克隆目录的隔离环境安装：
+在独立环境中从源码安装：
 
 ```bash
 git clone https://github.com/wanshuiyin/SuperARIS.git
@@ -47,65 +89,34 @@ python3 -m venv .venv
 .venv/bin/superaris
 ```
 
-第一屏选 **简体中文 / English**，再选项目、客户端组合、各角色模型、布局与可选任务。
-查看摘要后启动、返回修改或取消；确认启动前不创建新项目目录。从已绑定项目目录启动时，第一屏默认保存的界面语言（仍可调整），
-随后优先恢复原工作台和 owner。
-原生登录/信任提示由用户处理；Herdr 保持打开时，启动流程也能继续准备其余角色。
-
-包内自带 project-agent 资源。确认启动或准备 `context` 需要 ARIS 时，才按固定公共提交
-下载到 `$XDG_CACHE_HOME/superaris/aris/<commit>`，未设 XDG_CACHE_HOME 时使用
-`~/.cache/superaris/aris/<commit>`。已绑定项目保留所选 `aris_repo` 供后续上下文准备；
-help、plan、向导选择和取消不下载。已有 ARIS checkout 可明确指定：
+明确选择已有 ARIS 源码：
 
 ```bash
 SUPERARIS_ARIS_REPO=/path/to/aris superaris
 ```
 
-来源版本、缓存与更新见[依赖说明](docs/DEPENDENCIES.md)。不要求全局安装 skills，
-不改写用户模型或 MCP 配置。
+帮助、计划预览和向导取消不会获取 ARIS。固定版本、本地缓存与已有 receiver 的兼容说明见[依赖与来源](docs/DEPENDENCIES.md)。
 
-## 选择团队
+</details>
 
-| 组合 | 可见角色 |
-|---|---|
-| Codex | Codex 项目 owner |
-| CC + Codex | Claude Code owner 与 Codex 工程 |
-| CC + Codex + AGY | 上述角色，再加 Antigravity 写作 |
-
-角色、CLI harness 与实际模型分别判断；CC 沿用用户配置，不固定 DeepSeek 或 Claude 模型。
-Gemini 可实质主写，Codex 定事实并核查；临时作者和独立 reviewer 保留原 MCP 通道。
-
-```text
-+-------------------+----------------------+
-| main owner        | engineer / Codex     |
-| 目标/集成         +----------------------+
-|                   | writer / AGY         |
-+-------------------+----------------------+
-```
-
-布局只用于新工作台，已有 owner 不改名、不重排；协作者按选择启用。
-
-需要查看时，可用 `superaris receiver PROJECT --action status` 查询收件进程，
-`superaris reconcile PROJECT` 检查已登记结果。`superaris context PROJECT --role ROLE --skill NAME`
-只准备补充技能材料，不派发任务。日常使用仍可直接和主 Agent 对话；细节见下方文档。
-
-## 预览范围
-
-收件进程绑定单项目及原 main，detach 后继续；原 main 结束/变化、Herdr 服务不可用或明确停止时退出，
-不做全天候重建。人工掌控的输入只发通知，CC/AGY 后续跟进保持 notice；专属 Codex 自动化
-采用尽力输入检查，不保证与人工并发打字的原子隔离。
-
-记忆沿用原项目记录及明确纠正、决定、交付等事件；没有跨项目个人中心、自动学习偏好、
-永久模型记忆或第四讨论角色。界面语言不设定论文/任务语言，也不翻译原生客户端。
-原任务的写域、fresh review、预算、暂停 Goal 与发布授权继续生效。
-
-旧本地入口可能仍指向适配树。先在隔离环境试独立发行版；不要对同一活跃项目同时运行两版 receiver。
-
-## 文档
+## 使用文档
 
 - [工作台、角色与人工接手](docs/WORKBENCH.md)
 - [技能、上下文与恢复](docs/PROJECT_CONTEXT.md)
-- [收件与明确记忆事件](docs/RESULTS_AND_MEMORY.md)
-- [ARIS 依赖与更新](docs/DEPENDENCIES.md)
+- [主动跟进与项目记忆](docs/RESULTS_AND_MEMORY.md)
+- [ARIS 来源、依赖与更新](docs/DEPENDENCIES.md)
 
-来源归属和许可见 [LICENSE](LICENSE) 与 [NOTICE](NOTICE)。
+## Cite ARIS
+
+SuperARIS 基于 ARIS 的科研流程、审阅机制与项目知识积累。如果这些能力帮助了你的研究，请引用 [ARIS 技术报告](https://arxiv.org/abs/2605.03042)：
+
+```bibtex
+@article{yang2026aris,
+  title={ARIS: Autonomous Research via Adversarial Multi-Agent Collaboration},
+  author={Yang, Ruofeng and Li, Yongcan and Li, Shuai},
+  journal={arXiv preprint arXiv:2605.03042},
+  year={2026}
+}
+```
+
+感谢 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) 提供科研底座，[Herdr](https://herdr.dev) 提供常驻原生会话。SuperARIS 使用 [MIT 许可](LICENSE)，源码归属见 [NOTICE](NOTICE)。
