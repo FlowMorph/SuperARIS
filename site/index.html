@@ -1,0 +1,3051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SuperARIS — Your personal research agent with ARIS, powered by a team of agents.</title>
+  <meta name="description" content="SuperARIS — Your personal research agent with ARIS, powered by a team of agents. Live inside a real multi-pane CLI workbench with Claude Code, Codex, and Gemini." />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-canvas: #090b10;
+      --bg-canvas-elev: #0e1118;
+      --herdr-chrome: #13161f;
+      --herdr-sidebar: #10131b;
+      --herdr-pane: #171a22;
+      --herdr-pane-alt: #151820;
+      --herdr-tab-active: #c3c9e9;
+      --herdr-tab-text: #141722;
+      --border-outer: rgba(255, 255, 255, 0.11);
+      --border-pane: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.05);
+
+      --text-primary: #eef1f8;
+      --text-secondary: #9da5b8;
+      --text-muted: #646d82;
+
+      --cc-coral: #e07a5f;
+      --cc-coral-soft: rgba(224, 122, 95, 0.14);
+      --codex-green: #3fb984;
+      --codex-green-soft: rgba(63, 185, 132, 0.14);
+      --agy-cyan: #56b6c2;
+      --agy-purple: #c678dd;
+      --agy-soft: rgba(86, 182, 194, 0.14);
+      --amber-warn: #e5c07b;
+      --periwinkle: #aeb8fe;
+      --periwinkle-glow: rgba(174, 184, 254, 0.18);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-serif: 'Newsreader', Georgia, "Songti SC", serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.5;
+    }
+
+    body {
+      background-image:
+        radial-gradient(ellipse 80% 45% at 50% 0%, rgba(138, 152, 240, 0.09), transparent 70%),
+        radial-gradient(ellipse 55% 40% at 82% 28%, rgba(86, 182, 194, 0.05), transparent 65%);
+      min-height: 100vh;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: inherit;
+    }
+
+    /* Top Navigation */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(9, 11, 16, 0.82);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .topbar-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex-shrink: 0;
+    }
+
+    .brand-mark {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #c3c9e9 0%, #7f8ce0 100%);
+      color: #0e1118;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 12px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 10px rgba(174, 184, 254, 0.25);
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .brand-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-pane);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .nav-link {
+      font-size: 13px;
+      color: var(--text-secondary);
+      transition: color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .nav-link:hover {
+      color: var(--text-primary);
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-pane);
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    .lang-btn {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      padding: 3px 8px;
+      border-radius: 4px;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+    }
+
+    .lang-btn.active {
+      background: var(--herdr-tab-active);
+      color: var(--herdr-tab-text);
+      font-weight: 600;
+    }
+
+    /* Main Container */
+    .page-shell {
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 22px 24px 64px;
+    }
+
+    /* Compact Hero Header */
+    .hero-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .hero-copy {
+      max-width: 790px;
+      min-width: 0;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--periwinkle);
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .eyebrow-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--codex-green);
+      box-shadow: 0 0 8px var(--codex-green);
+      flex-shrink: 0;
+    }
+
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(23px, 2.5vw, 35px);
+      font-weight: 500;
+      line-height: 1.18;
+      letter-spacing: -0.015em;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .hero-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      max-width: 700px;
+    }
+
+    .hero-install-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 7px;
+      max-width: 100%;
+    }
+
+    .install-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #12151e;
+      border: 1px solid var(--border-outer);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      color: var(--text-primary);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .install-pill .prompt-dollar {
+      color: var(--cc-coral);
+      user-select: none;
+    }
+
+    .install-pill .cmd-divider {
+      color: var(--text-muted);
+    }
+
+    .copy-btn {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.13);
+      color: var(--text-primary);
+    }
+
+    .hero-role-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .role-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Stage Director Bar (Above Workbench) */
+    .director-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #11141d;
+      border: 1px solid var(--border-outer);
+      border-bottom: none;
+      border-radius: 12px 12px 0 0;
+      padding: 9px 14px;
+    }
+
+    .stage-steps {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      scrollbar-width: none;
+    }
+
+    .stage-steps::-webkit-scrollbar {
+      display: none;
+    }
+
+    .stage-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      background: transparent;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .stage-btn.active {
+      color: var(--text-primary);
+      background: rgba(195, 201, 233, 0.12);
+      border-color: rgba(195, 201, 233, 0.28);
+      font-weight: 500;
+    }
+
+    .stage-num {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .stage-btn.active .stage-num {
+      color: var(--periwinkle);
+    }
+
+    .stage-progress {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--periwinkle);
+      width: 0%;
+    }
+
+    .director-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .stage-caption-pill {
+      font-size: 12px;
+      color: var(--text-secondary);
+      padding-right: 6px;
+      border-right: 1px solid var(--border-pane);
+    }
+
+    .ctrl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-pane);
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+
+    /* =====================================================
+       HERDR NATIVE WORKBENCH WINDOW
+       ===================================================== */
+    .herdr-window {
+      background: var(--herdr-chrome);
+      border: 1px solid var(--border-outer);
+      border-radius: 0 0 12px 12px;
+      box-shadow:
+        0 26px 70px rgba(0, 0, 0, 0.65),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* macOS Window Titlebar */
+    .herdr-titlebar {
+      height: 34px;
+      background: #0f1219;
+      border-bottom: 1px solid var(--border-pane);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      user-select: none;
+      gap: 8px;
+    }
+
+    .window-Lights {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-shrink: 0;
+    }
+
+    .light {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .light.red { background: #ff5f56; }
+    .light.yellow { background: #ffbd2e; }
+    .light.green { background: #27c93f; }
+
+    .window-title {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .window-title-badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+    }
+
+    .window-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Main Herdr Body: Left Sidebar + Right Workspace */
+    .herdr-body {
+      display: grid;
+      grid-template-columns: 215px minmax(0, 1fr);
+      height: 650px;
+      position: relative;
+    }
+
+    /* Left Herdr Sidebar (spaces + agents) */
+    .herdr-sidebar {
+      background: var(--herdr-sidebar);
+      border-right: 1px solid var(--border-pane);
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      user-select: none;
+      min-width: 0;
+    }
+
+    .sidebar-section {
+      margin-bottom: 16px;
+    }
+
+    .sidebar-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 4px 8px 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border-radius: 5px;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+      transition: background 0.15s ease;
+    }
+
+    .sidebar-item.active {
+      background: rgba(195, 201, 233, 0.11);
+      color: var(--text-primary);
+    }
+
+    .sidebar-item-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .status-dot.live {
+      background: var(--codex-green);
+      box-shadow: 0 0 6px var(--codex-green);
+    }
+
+    .status-dot.busy {
+      background: var(--amber-warn);
+      box-shadow: 0 0 6px var(--amber-warn);
+    }
+
+    .sidebar-count {
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      flex-shrink: 0;
+    }
+
+    .agent-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border-radius: 5px;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      margin-bottom: 3px;
+      border-left: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .agent-row.active-role {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+    }
+
+    .agent-row.role-main.active-role { border-left-color: var(--cc-coral); }
+    .agent-row.role-eng.active-role { border-left-color: var(--codex-green); }
+    .agent-row.role-writer.active-role { border-left-color: var(--agy-cyan); }
+
+    .agent-badge {
+      font-size: 9.5px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 8px 6px 2px;
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+
+    .artifact-tree-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .artifact-file {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 4px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+      transition: all 0.2s ease;
+    }
+
+    .artifact-file.updated {
+      background: rgba(63, 185, 132, 0.12);
+      color: #a8f0ce;
+    }
+
+    /* Right Workspace Area (Top Tabbar + 3-Pane Split) */
+    .herdr-workspace {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      background: var(--herdr-pane);
+      position: relative;
+    }
+
+    /* Herdr Space Tabbar */
+    .herdr-tabbar {
+      height: 34px;
+      background: #11141c;
+      border-bottom: 1px solid var(--border-pane);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      flex-shrink: 0;
+    }
+
+    .herdr-tabs-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .herdr-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px;
+      border-radius: 5px;
+      background: var(--herdr-tab-active);
+      color: var(--herdr-tab-text);
+      font-weight: 600;
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+
+    .herdr-tab-add {
+      color: var(--text-muted);
+      padding: 2px 6px;
+    }
+
+    /* Mobile Pane Switcher (Only visible on small screens) */
+    .mobile-pane-tabs {
+      display: none;
+      gap: 4px;
+    }
+
+    .mobile-pane-btn {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    .mobile-pane-btn.active {
+      background: rgba(195, 201, 233, 0.18);
+      color: var(--text-primary);
+      border-color: var(--periwinkle);
+    }
+
+    /* 3-Pane Split Grid: Left Full Height (CC), Right Stacked (Codex Top, AGY Bottom) */
+    .panes-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      grid-template-rows: 1fr 1fr;
+      min-height: 0;
+      position: relative;
+    }
+
+    .cli-pane {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      background: var(--herdr-pane);
+      position: relative;
+      transition: box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    .cli-pane.pane-main {
+      grid-column: 1 / 2;
+      grid-row: 1 / 3;
+      border-right: 1px solid var(--border-pane);
+    }
+
+    .cli-pane.pane-engineer {
+      grid-column: 2 / 3;
+      grid-row: 1 / 2;
+      border-bottom: 1px solid var(--border-pane);
+      background: var(--herdr-pane-alt);
+    }
+
+    .cli-pane.pane-writer {
+      grid-column: 2 / 3;
+      grid-row: 2 / 3;
+    }
+
+    .cli-pane.pane-focused {
+      box-shadow: inset 0 0 0 1px rgba(195, 201, 233, 0.22);
+    }
+
+    /* Pane Header Bar */
+    .pane-topbar {
+      height: 27px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: rgba(0, 0, 0, 0.16);
+      flex-shrink: 0;
+      gap: 6px;
+    }
+
+    .pane-id {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text-secondary);
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .pane-role-tag {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .pane-main .pane-role-tag { color: var(--cc-coral); }
+    .pane-engineer .pane-role-tag { color: var(--codex-green); }
+    .pane-writer .pane-role-tag { color: var(--agy-cyan); }
+
+    .pane-right-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+      color: var(--text-muted);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .write-scope-pill {
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    /* Terminal Scroll Content */
+    .pane-stream {
+      flex: 1;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.52;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.12) transparent;
+    }
+
+    /* Native CLI Banner Boxes */
+    .cc-welcome-box {
+      border: 1px solid rgba(224, 122, 95, 0.42);
+      border-radius: 6px;
+      padding: 7px 11px;
+      background: rgba(224, 122, 95, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .cc-welcome-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .cc-mascot {
+      color: var(--cc-coral);
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1;
+      padding: 4px 6px;
+      background: rgba(224, 122, 95, 0.14);
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .codex-banner-box {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 6px;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.02);
+      font-size: 10.5px;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .agy-banner-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 10px;
+      border-radius: 5px;
+      background: linear-gradient(90deg, rgba(86, 182, 194, 0.1), rgba(198, 120, 221, 0.08));
+      border: 1px solid rgba(86, 182, 194, 0.25);
+      font-size: 10.5px;
+      flex-shrink: 0;
+    }
+
+    .agy-logo-text {
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      background: linear-gradient(90deg, #56b6c2, #c678dd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Terminal History Separator */
+    .history-divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin: 2px 0;
+      user-select: none;
+    }
+
+    .history-divider::before,
+    .history-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* Terminal Log Lines */
+    .t-entry {
+      opacity: 0;
+      transform: translateY(3px);
+      animation: termFadeIn 0.2s ease forwards;
+    }
+
+    .t-entry.t-history {
+      opacity: 0.72;
+      transform: none;
+      animation: none;
+    }
+
+    @keyframes termFadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .t-cmd {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .t-cmd .p-char {
+      color: var(--cc-coral);
+      margin-right: 6px;
+    }
+
+    .pane-engineer .t-cmd .p-char { color: var(--codex-green); }
+    .pane-writer .t-cmd .p-char { color: var(--agy-cyan); }
+
+    .t-skill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(174, 184, 254, 0.11);
+      border: 1px solid rgba(174, 184, 254, 0.25);
+      color: var(--periwinkle);
+      font-size: 10.5px;
+    }
+
+    .t-info {
+      color: var(--text-secondary);
+    }
+
+    .t-muted {
+      color: var(--text-muted);
+      font-size: 10.5px;
+    }
+
+    .t-file-card {
+      background: rgba(0, 0, 0, 0.26);
+      border: 1px solid var(--border-pane);
+      border-left: 2px solid var(--periwinkle);
+      border-radius: 5px;
+      padding: 6px 9px;
+      font-size: 10.5px;
+    }
+
+    .pane-engineer .t-file-card { border-left-color: var(--codex-green); }
+    .pane-writer .t-file-card { border-left-color: var(--agy-cyan); }
+
+    .t-file-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-primary);
+      font-weight: 500;
+      margin-bottom: 3px;
+      gap: 8px;
+    }
+
+    .t-diff-add { color: #58d68d; }
+    .t-diff-del { color: #ec7063; }
+
+    /* Compact Inline CLI Wizard inside Main Pane (Scene 1) */
+    .t-cli-wizard {
+      background: rgba(195, 201, 233, 0.05);
+      border: 1px solid rgba(195, 201, 233, 0.22);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 10.5px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .t-cli-wizard-title {
+      color: var(--periwinkle);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .t-cli-wizard-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      color: var(--text-secondary);
+    }
+
+    .t-cli-wizard-row .q-mark {
+      color: var(--codex-green);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .t-cli-wizard-row .ans-val {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .t-handoff {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 9px;
+      border-radius: 5px;
+      background: rgba(224, 122, 95, 0.09);
+      border: 1px solid rgba(224, 122, 95, 0.25);
+      color: #f3b5a4;
+      font-size: 10.5px;
+    }
+
+    /* Native CLI Input & Status Bar at Bottom of Each Pane */
+    .pane-bottom {
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(0, 0, 0, 0.22);
+      font-family: var(--font-mono);
+      flex-shrink: 0;
+    }
+
+    .pane-input-line {
+      padding: 5px 12px;
+      font-size: 11px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      min-height: 27px;
+    }
+
+    .input-prompt-char {
+      color: var(--cc-coral);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .pane-engineer .input-prompt-char { color: var(--codex-green); }
+    .pane-writer .input-prompt-char { color: var(--agy-cyan); }
+
+    .typing-text {
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cursor-block {
+      display: inline-block;
+      width: 6px;
+      height: 12px;
+      background: var(--periwinkle);
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .pane-statusbar {
+      padding: 4px 12px;
+      font-size: 10px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .status-left, .status-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .model-tag {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Background Review Drawer (Docked above bottom status bar so writer input stays visible) */
+    .mcp-drawer {
+      position: absolute;
+      right: 14px;
+      bottom: 64px;
+      z-index: 25;
+      width: 390px;
+      max-width: calc(100% - 28px);
+      background: rgba(15, 18, 26, 0.96);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(229, 192, 123, 0.45);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: all 0.22s ease;
+    }
+
+    .mcp-drawer.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .mcp-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      color: var(--amber-warn);
+      font-weight: 600;
+      gap: 8px;
+    }
+
+    .mcp-body {
+      color: var(--text-secondary);
+      font-size: 10.5px;
+      line-height: 1.45;
+    }
+
+    /* Compact Secondary Section Below Workbench (3 Cards) */
+    .below-fold {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .info-card {
+      background: #11141d;
+      border: 1px solid var(--border-pane);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+
+    .info-card-kicker {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--periwinkle);
+      margin-bottom: 6px;
+    }
+
+    .info-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .info-card-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      margin-bottom: 10px;
+    }
+
+    .info-card-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      padding-top: 8px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .meta-tag {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+    }
+
+    /* Footer */
+    .page-footer {
+      margin-top: 28px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1080px) {
+      .herdr-body {
+        grid-template-columns: 175px minmax(0, 1fr);
+        height: 620px;
+      }
+      .below-fold {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .topbar-inner {
+        padding: 8px 12px;
+        gap: 8px;
+      }
+      .brand-badge,
+      .nav-link-anchor {
+        display: none;
+      }
+      .page-shell {
+        padding: 14px 10px 44px;
+      }
+      .hero-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .hero-install-box {
+        align-items: flex-start;
+        width: 100%;
+      }
+      .install-pill {
+        width: 100%;
+        justify-content: space-between;
+        font-size: 11.5px;
+        padding: 7px 10px;
+      }
+      .director-bar {
+        padding: 8px 10px;
+      }
+      .stage-caption-pill,
+      .window-meta {
+        display: none;
+      }
+      .herdr-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr);
+        height: 560px;
+      }
+      .herdr-sidebar {
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-pane);
+        padding: 6px 10px;
+        flex-direction: row;
+        align-items: center;
+         gap: 8px;
+        overflow-x: auto;
+      }
+      .sidebar-section {
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .sidebar-heading,
+      .sidebar-footer {
+        display: none;
+      }
+      .herdr-tabbar {
+        height: auto;
+        min-height: 34px;
+        padding: 5px 8px;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .herdr-tab {
+        padding: 3px 8px;
+        font-size: 10.5px;
+      }
+      .herdr-tab-add {
+        display: none;
+      }
+      .mobile-pane-tabs {
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .panes-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+      }
+      .cli-pane {
+        display: none;
+      }
+      .cli-pane.mobile-active {
+        display: flex;
+        grid-column: 1 / -1;
+        grid-row: 1 / -1;
+      }
+      .mcp-drawer {
+        left: 10px;
+        right: 10px;
+        bottom: 62px;
+        width: auto;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+      /* =====================================================
+       THEME SWITCHER, PLAYBACK SPEED & WARM BEIGE PAGE THEME
+       ===================================================== */
+    .theme-switch {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-pane);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 1px;
+    }
+
+    .theme-btn {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      padding: 3px 8px;
+      border-radius: 4px;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .theme-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .theme-btn.active,
+    body:not([data-theme="warm"]) #themeDarkBtn,
+    body[data-theme="warm"] #themeWarmBtn {
+      background: var(--herdr-tab-active);
+      color: var(--herdr-tab-text);
+      font-weight: 600;
+    }
+
+    .speed-select {
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 20px 4px 8px;
+      border-radius: 5px;
+      background-color: rgba(255, 255, 255, 0.05);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath fill='%239da5b8' d='M0 0l4 5 4-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      border: 1px solid var(--border-pane);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .speed-select:hover,
+    .speed-select:focus {
+      color: var(--text-primary);
+      border-color: var(--border-outer);
+      outline: none;
+    }
+
+    .speed-select option {
+      background: #13161f;
+      color: #eef1f8;
+    }
+
+    /* Warm Beige Outer Page Theme (Herdr terminal stays native dark) */
+    body[data-theme="warm"] {
+      --bg-canvas: #f4efe6;
+      --bg-canvas-elev: #fbf8f2;
+      --text-primary: #1d1a16;
+      --text-secondary: #575148;
+      --text-muted: #857d72;
+      --border-outer: rgba(29, 26, 22, 0.16);
+      --border-pane: rgba(29, 26, 22, 0.11);
+      --border-subtle: rgba(29, 26, 22, 0.07);
+      --periwinkle: #455299;
+
+      background-color: var(--bg-canvas);
+      background-image:
+        radial-gradient(ellipse 80% 45% at 50% 0%, rgba(186, 165, 132, 0.22), transparent 70%),
+        radial-gradient(ellipse 55% 40% at 82% 28%, rgba(224, 122, 95, 0.07), transparent 65%);
+      color: var(--text-primary);
+    }
+
+    body[data-theme="warm"] .topbar {
+      background: rgba(244, 239, 230, 0.88);
+      border-bottom-color: rgba(29, 26, 22, 0.09);
+    }
+
+    body[data-theme="warm"] .brand-badge,
+    body[data-theme="warm"] .role-chip,
+    body[data-theme="warm"] .meta-tag {
+      background: rgba(29, 26, 22, 0.05);
+      border-color: rgba(29, 26, 22, 0.1);
+      color: #4a443c;
+    }
+
+    body[data-theme="warm"] .theme-switch,
+    body[data-theme="warm"] .lang-switch {
+      background: rgba(29, 26, 22, 0.05);
+      border-color: rgba(29, 26, 22, 0.13);
+    }
+
+    body[data-theme="warm"] #themeDarkBtn {
+      background: transparent;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    body[data-theme="warm"] #themeWarmBtn,
+    body[data-theme="warm"] .lang-btn.active {
+      background: #232736;
+      color: #f7f4ed;
+      font-weight: 600;
+    }
+
+    body[data-theme="warm"] .install-pill {
+      background: #fbf8f2;
+      border-color: rgba(29, 26, 22, 0.18);
+      color: #1d1a16;
+      box-shadow: 0 6px 20px rgba(45, 38, 28, 0.08);
+    }
+
+    body[data-theme="warm"] .install-pill .prompt-dollar {
+      color: #c85a3d;
+    }
+
+    body[data-theme="warm"] .copy-btn {
+      background: rgba(29, 26, 22, 0.06);
+      border-color: rgba(29, 26, 22, 0.12);
+      color: #4a443c;
+    }
+
+    body[data-theme="warm"] .copy-btn:hover {
+      background: rgba(29, 26, 22, 0.11);
+      color: #1d1a16;
+    }
+
+    body[data-theme="warm"] .director-bar {
+      background: #eae3d4;
+      border-color: rgba(29, 26, 22, 0.16);
+    }
+
+    body[data-theme="warm"] .stage-btn:hover {
+      background: rgba(29, 26, 22, 0.05);
+    }
+
+    body[data-theme="warm"] .stage-btn.active {
+      background: #fbf8f2;
+      border-color: rgba(29, 26, 22, 0.2);
+      color: #1d1a16;
+      box-shadow: 0 1px 3px rgba(29, 26, 22, 0.06);
+    }
+
+    body[data-theme="warm"] .ctrl-btn,
+    body[data-theme="warm"] .speed-select {
+      background-color: #fbf8f2;
+      border-color: rgba(29, 26, 22, 0.15);
+      color: #3d3830;
+    }
+
+    body[data-theme="warm"] .speed-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath fill='%23575148' d='M0 0l4 5 4-5z'/%3E%3C/svg%3E");
+    }
+
+    body[data-theme="warm"] .ctrl-btn:hover,
+    body[data-theme="warm"] .speed-select:hover {
+      background-color: #ffffff;
+      color: #1d1a16;
+    }
+
+    body[data-theme="warm"] .info-card {
+      background: #fbf8f2;
+      border-color: rgba(29, 26, 22, 0.12);
+      box-shadow: 0 8px 24px rgba(45, 38, 28, 0.05);
+    }
+
+    /* Strictly lock Herdr workbench internal tokens so terminal stays 100% dark */
+    body[data-theme="warm"] .herdr-window {
+      --text-primary: #eef1f8;
+      --text-secondary: #9da5b8;
+      --text-muted: #646d82;
+      --border-outer: rgba(255, 255, 255, 0.11);
+      --border-pane: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.05);
+      --periwinkle: #aeb8fe;
+      color: #eef1f8;
+      border-color: rgba(29, 26, 22, 0.24);
+      box-shadow:
+        0 24px 60px rgba(36, 30, 20, 0.22),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    }
+
+    @media (max-width: 780px) {
+      .topbar-actions {
+        gap: 6px;
+      }
+      .topbar-actions .nav-link span {
+        display: none;
+      }
+      .theme-btn,
+      .lang-btn {
+        padding: 3px 6px;
+        font-size: 10.5px;
+      }
+      .director-controls {
+        gap: 5px;
+      }
+      .speed-select,
+      .ctrl-btn {
+        padding: 4px 7px;
+        font-size: 10.5px;
+      }
+      .speed-select {
+        padding-right: 17px;
+      }
+    }
+
+    .project-record {margin-top:auto;padding:12px 8px;border-top:1px solid var(--border-subtle)}
+    @media(max-width:780px){.project-record {display:none}.review-control{font-size:9px!important}}
+    .workflow-links {display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;font-size:12px;color:var(--periwinkle)}
+    .workflow-links a {text-decoration:underline;text-underline-offset:3px}
+    .demo-note,.install-note {font-size:11px;color:var(--text-secondary);margin:12px 0;line-height:1.7}
+    .install-note a {text-decoration:underline}
+    .install-pill {min-width:0;max-width:100%}
+    .install-pill > span {overflow-wrap:anywhere;min-width:0}
+    button:focus-visible,a:focus-visible,select:focus-visible {outline:2px solid var(--periwinkle);outline-offset:3px}
+  </style>
+</head>
+<body data-theme="dark">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">SA</div>
+        <span class="brand-name">SuperARIS</span>
+        <span class="brand-badge">Herdr + ARIS Workbench</span>
+      </div>
+      <div class="topbar-actions">
+        <a href="#workbench" class="nav-link nav-link-anchor" data-i18n="nav_workbench">Workbench</a>
+        <a href="#capabilities" class="nav-link nav-link-anchor" data-i18n="nav_architecture">Why SuperARIS</a>
+        <a href="https://github.com/wanshuiyin/SuperARIS" target="_blank" rel="noopener" class="nav-link">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span>GitHub</span>
+        </a>
+        <div class="theme-switch" role="group" aria-label="Page theme">
+<button type="button" class="theme-btn active" id="themeDarkBtn" aria-pressed="true" data-i18n="theme_dark">Dark</button>
+<button type="button" class="theme-btn" id="themeWarmBtn" aria-pressed="false" data-i18n="theme_warm">Warm</button>
+</div>
+<div class="lang-switch" role="group" aria-label="Language switch">
+          <button type="button" class="lang-btn active" id="lang-en" data-lang="en">EN</button>
+          <button type="button" class="lang-btn" id="lang-zh" data-lang="zh">中文</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="page-shell">
+
+    <!-- Compact Hero Header -->
+    <section class="hero-header">
+      <div class="hero-copy">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          <span data-i18n="eyebrow">Visible Multi-Pane Research Team · One Command Startup</span>
+        </div>
+        <h1 class="hero-title">SuperARIS — Your personal research agent with ARIS, powered by a team of agents.</h1>
+        <p class="hero-subtitle" id="hero-subtitle">Discuss a research goal with your main agent. Codex checks the evidence, Gemini helps shape and write the paper, and a fresh background reviewer brings an independent perspective.</p>
+      </div>
+
+      <div class="hero-install-box">
+        <div class="install-pill">
+          <span><span class="prompt-dollar">$</span> pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'</span>
+          <button type="button" class="copy-btn" id="copy-cmd-btn">Copy</button>
+        </div>
+        <p class="install-note"><a href="https://github.com/wanshuiyin/SuperARIS#install-and-open" data-i18n="install_note">Python 3.10+ · macOS / Linux · Configure Herdr and your selected native CLIs. Install &amp; guide →</a></p>
+        <div class="hero-role-badges">
+          <span class="role-chip"><span class="chip-dot" style="background: var(--cc-coral)"></span>main · Claude Code</span>
+          <span class="role-chip"><span class="chip-dot" style="background: var(--codex-green)"></span>engineer · Codex</span>
+          <span class="role-chip"><span class="chip-dot" style="background: var(--agy-cyan)"></span>writer · Gemini 4 (AGY)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stage Director Bar -->
+    <div class="director-bar" id="workbench">
+      <div class="stage-steps" id="stage-steps" role="tablist" aria-label="Research workflow stages">
+        <!-- Populated by JS -->
+      </div>
+      <div class="director-controls">
+        <span class="stage-caption-pill" id="stage-caption">Stage 1/6 · One-command setup</span>
+        <label class="review-control" style="display:inline-flex;gap:5px;align-items:center;font-size:10px;color:var(--text-secondary)"><input type="checkbox" id="includeReview" checked><span data-i18n="review_toggle">Background review</span></label>
+<select class="speed-select" id="playbackSpeed" aria-label="Playback speed"><option value="1">1×</option><option value="1.5" selected>1.5×</option><option value="2">2×</option></select>
+<button type="button" class="ctrl-btn" id="play-pause-btn" aria-label="Pause or play">
+          <span id="play-pause-icon">⏸</span>
+          <span id="play-pause-label">Pause</span>
+        </button>
+        <button type="button" class="ctrl-btn" id="replay-btn" aria-label="Replay workflow" data-i18n="replay">↺ Replay</button>
+      </div>
+    </div>
+
+    <!-- =====================================================
+         HERDR NATIVE WORKBENCH SHOWCASE
+         ===================================================== -->
+    <section class="herdr-window" aria-label="SuperARIS Herdr Multi-Agent Workbench">
+
+      <!-- Window Chrome -->
+      <div class="herdr-titlebar">
+        <div class="window-Lights">
+          <span class="light red"></span>
+          <span class="light yellow"></span>
+          <span class="light green"></span>
+        </div>
+        <div class="window-title">
+          <span>Herdr — SuperARIS · ~/research/sparse-attn-paper</span>
+          <span class="window-title-badge" id="window-stage-badge">project-agent · active</span>
+        </div>
+        <div class="window-meta">
+          <span>Herdr</span>
+          <span>3 Panes Live</span>
+        </div>
+      </div>
+
+      <!-- Herdr Body: Left Sidebar + Right 3-Pane Split -->
+      <div class="herdr-body">
+
+        <!-- Left Herdr Sidebar -->
+        <aside class="herdr-sidebar" aria-label="Herdr spaces and agents">
+          <div>
+            <div class="sidebar-section">
+              <div class="sidebar-heading">
+                <span>spaces</span>
+                <span>+</span>
+              </div>
+              <div class="sidebar-item">
+                <div class="sidebar-item-left">
+                  <span class="status-dot"></span>
+                  <span>Default</span>
+                </div>
+                <span class="sidebar-count">2</span>
+              </div>
+              <div class="sidebar-item active">
+                <div class="sidebar-item-left">
+                  <span class="status-dot live"></span>
+                  <span>SuperARIS</span>
+                </div>
+                <span class="sidebar-count">3</span>
+              </div>
+            </div>
+
+            <div class="sidebar-section">
+              <div class="sidebar-heading">
+                <span>agents</span>
+                <span>+</span>
+              </div>
+              <div class="agent-row role-main active-role" id="sidebar-agent-main">
+                <div class="sidebar-item-left">
+                  <span class="status-dot live" id="dot-main"></span>
+                  <span>main · CC</span>
+                </div>
+                <span class="agent-badge" id="badge-main">lead</span>
+              </div>
+              <div class="agent-row role-eng" id="sidebar-agent-eng">
+                <div class="sidebar-item-left">
+                  <span class="status-dot live" id="dot-eng"></span>
+                  <span>engineer · Codex</span>
+                </div>
+                <span class="agent-badge" id="badge-eng">ready</span>
+              </div>
+              <div class="agent-row role-writer" id="sidebar-agent-writer">
+                <div class="sidebar-item-left">
+                  <span class="status-dot live" id="dot-writer"></span>
+                  <span>writer · AGY</span>
+                </div>
+                <span class="agent-badge" id="badge-writer">ready</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-section project-record" aria-label="Project record">
+            <div class="sidebar-heading"><span data-i18n="record_title">Project record</span></div>
+            <div id="project-record" style="font-size:10px;line-height:1.8;color:var(--text-secondary)"></div>
+          </div>
+          <!-- Project Files Tree -->
+          <div class="sidebar-footer">
+            <div class="artifact-tree-title" data-i18n="sidebar_artifacts">Project Files</div>
+            <div class="artifact-file" id="file-plan">
+              <span>IDEA_REPORT.md</span>
+              <span id="file-plan-stat">v1</span>
+            </div>
+            <div class="artifact-file" id="file-exp">
+              <span>results/table1.json</span>
+              <span id="file-exp-stat">--</span>
+            </div>
+            <div class="artifact-file" id="file-tex">
+              <span>paper/method.tex</span>
+              <span id="file-tex-stat">--</span>
+            </div>
+            <div class="artifact-file" id="file-audit">
+              <span>CLAIM_AUDIT.md</span>
+              <span id="file-audit-stat">--</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Right Workspace -->
+        <div class="herdr-workspace">
+
+          <!-- Top Space Tabbar -->
+          <div class="herdr-tabbar">
+            <div class="herdr-tabs-left">
+              <div class="herdr-tab">
+                <span>SuperARIS · Workbench</span>
+                <span style="opacity:0.55">×</span>
+              </div>
+              <span class="herdr-tab-add">+</span>
+            </div>
+
+            <!-- Mobile Pane Selector -->
+            <div class="mobile-pane-tabs" id="mobile-pane-tabs">
+              <button type="button" class="mobile-pane-btn active" data-pane="main">main·CC</button>
+              <button type="button" class="mobile-pane-btn" data-pane="engineer">engineer·Codex</button>
+              <button type="button" class="mobile-pane-btn" data-pane="writer">writer·AGY</button>
+            </div>
+          </div>
+
+          <!-- 3-Pane Split Grid -->
+          <div class="panes-grid">
+
+            <!-- LEFT FULL-HEIGHT PANE: main · Claude Code -->
+            <article class="cli-pane pane-main mobile-active" id="pane-main">
+              <div class="pane-topbar">
+                <div class="pane-id">
+                  <span class="pane-role-tag">main</span>
+                  <span>· Claude Code</span>
+                </div>
+                <div class="pane-right-meta">
+                  <span class="write-scope-pill" id="scope-main">Research Lead · Coordinates &amp; Accepts</span>
+                </div>
+              </div>
+
+              <div class="pane-stream" id="stream-main">
+                <div class="cc-welcome-box">
+                  <div class="cc-welcome-left">
+                    <span class="cc-mascot">✻</span>
+                    <div>
+                      <div style="color:var(--text-primary);font-weight:600;">Claude Code</div>
+                      <div style="color:var(--text-secondary);font-size:10px;">Your configured model · ARIS Skill Library · ~/research/sparse-attn-paper</div>
+                    </div>
+                  </div>
+                  <span style="color:var(--text-muted);font-size:10px;">owner: main</span>
+                </div>
+                <div id="logs-main"></div>
+              </div>
+
+              <div class="pane-bottom">
+                <div class="pane-input-line">
+                  <span class="input-prompt-char">❯</span>
+                  <span class="typing-text" id="input-main"></span>
+                  <span class="cursor-block" id="cursor-main"></span>
+                </div>
+                <div class="pane-statusbar">
+                  <div class="status-left">
+                    <span class="model-tag">[your configured model]</span>
+                    <span>📁 sparse-attn-paper</span>
+                  </div>
+                  <div class="status-right">
+                    <span style="color:var(--cc-coral)">▸▸ lead coordinator</span>
+                    <span id="ctx-main">ctx: 18%</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- TOP-RIGHT PANE: engineer · Codex -->
+            <article class="cli-pane pane-engineer" id="pane-engineer">
+              <div class="pane-topbar">
+                <div class="pane-id">
+                  <span class="pane-role-tag">engineer</span>
+                  <span>· OpenAI Codex</span>
+                </div>
+                <div class="pane-right-meta">
+                  <span class="write-scope-pill" id="scope-eng">Experiments, Code &amp; Fact Check</span>
+                </div>
+              </div>
+
+              <div class="pane-stream" id="stream-engineer">
+                <div class="codex-banner-box">
+                  <div style="color:var(--text-primary);font-weight:600;">&gt;_ OpenAI Codex</div>
+                  <div>model: <span style="color:var(--codex-green)">your configured model</span> · directory: ~/research/sparse-attn-paper</div>
+                </div>
+                <div id="logs-engineer"></div>
+              </div>
+
+              <div class="pane-bottom">
+                <div class="pane-input-line">
+                  <span class="input-prompt-char">›</span>
+                  <span class="typing-text" id="input-engineer"></span>
+                  <span class="cursor-block" id="cursor-engineer" style="display:none"></span>
+                </div>
+                <div class="pane-statusbar">
+                  <div class="status-left">
+                    <span class="model-tag">your configured model</span>
+                    <span>· 92% left</span>
+                  </div>
+                  <div class="status-right">
+                    <span id="status-eng">~/research/sparse-attn-paper</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- BOTTOM-RIGHT PANE: writer · Antigravity (Gemini 4) -->
+            <article class="cli-pane pane-writer" id="pane-writer">
+              <div class="pane-topbar">
+                <div class="pane-id">
+                  <span class="pane-role-tag">writer</span>
+                  <span>· Antigravity</span>
+                </div>
+                <div class="pane-right-meta">
+                  <span class="write-scope-pill" id="scope-writer">Idea Co-Design &amp; Paper Prose</span>
+                </div>
+              </div>
+
+              <div class="pane-stream" id="stream-writer">
+                <div class="agy-banner-box">
+                  <span class="agy-logo-text">ANTIGRAVITY</span>
+                  <span style="color:var(--text-secondary)">Gemini 4 Argon · Paper &amp; Narrative Lead</span>
+                </div>
+                <div id="logs-writer"></div>
+              </div>
+
+              <div class="pane-bottom">
+                <div class="pane-input-line">
+                  <span class="input-prompt-char">&gt;</span>
+                  <span class="typing-text" id="input-writer"></span>
+                  <span class="cursor-block" id="cursor-writer" style="display:none"></span>
+                </div>
+                <div class="pane-statusbar">
+                  <div class="status-left">
+                    <span>~/research/sparse-attn-paper (main*)</span>
+                  </div>
+                  <div class="status-right">
+                    <span class="model-tag" style="color:var(--agy-cyan)">Gemini 4 Argon · high</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+          </div>
+
+          <!-- Background Reviewer Notification Drawer (Scene 5) -->
+          <div class="mcp-drawer" id="mcp-drawer" role="status" aria-live="polite">
+            <div class="mcp-head">
+              <span id="mcp-title">⚡ Background reviewer · Fresh context</span>
+              <span style="font-size:10px;color:var(--text-muted)" data-i18n="fresh_context">Fresh context</span>
+            </div>
+            <div class="mcp-body" id="mcp-body">Read <code>paper/method.tex</code> alongside <code>results/table1.json</code>. The reviewer asks for a clearer uncertainty statement; Gemini revises it and Codex checks the values.</div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <p class="demo-note" data-i18n="demo_note">Interactive walkthrough · illustrative project and data. Models and roles are configurable.</p>
+    <!-- Below the Fold: 3 Researcher-Focused Cards -->
+    <section class="below-fold" id="capabilities">
+      <div class="info-card">
+        <div class="info-card-kicker" data-i18n="card1_kicker">01 · Specialized Research Team</div>
+        <h2 class="info-card-title" data-i18n="card1_title">A research team you can work alongside</h2>
+        <p class="info-card-desc" data-i18n="card1_desc">Bring the research into one project. Your main agent holds the goal, Codex implements and checks evidence, and Gemini discusses ideas and writes substantive prose. Step into any live session when you need to.</p>
+        <div class="info-card-meta">
+          <span class="meta-tag">Lead · Direction &amp; Decisions</span>
+          <span class="meta-tag">Codex · Experiments &amp; Proof Check</span>
+          <span class="meta-tag">Gemini · Argument &amp; Paper Prose</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-kicker" data-i18n="card2_kicker">02 · ARIS Workflows</div>
+        <h2 class="info-card-title" data-i18n="card2_title">A full pipeline, a workflow, or a single skill</h2>
+        <p class="info-card-desc" data-i18n="card2_desc">Ask your main agent to carry a project forward, delegate an experimental workflow to engineering, or use a writing skill with Gemini. ARIS keeps its original review and acceptance gates; configured reviewers work in the background.</p>
+        <nav class="workflow-links" aria-label="ARIS workflows"><a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/research-pipeline/SKILL.md" data-i18n="link_pipeline">Full pipeline</a><a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/idea-discovery/SKILL.md" data-i18n="link_ideas">Ideas</a><a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/experiment-bridge/SKILL.md" data-i18n="link_experiments">Experiments</a><a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/auto-review-loop/SKILL.md" data-i18n="link_review">Review</a><a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/paper-writing/SKILL.md" data-i18n="link_writing">Writing</a><a href="https://github.com/wanshuiyin/SuperARIS/blob/main/docs/PROJECT_CONTEXT.md" data-i18n="link_guide">Project guide ↗</a></nav><div class="info-card-meta">
+          <span class="meta-tag">Tier 1 · Codex Solo</span>
+          <span class="meta-tag">Tier 2 · CC + Codex</span>
+          <span class="meta-tag">Tier 3 · CC + Codex + Gemini</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-kicker" data-i18n="card3_kicker">03 · Multi-Day Research Continuity</div>
+        <h2 class="info-card-title" data-i18n="card3_title">Return to the project. Continue from its files.</h2>
+        <p class="info-card-desc" data-i18n="card3_desc">Reopen the project and read its saved decisions, results, and pending work. Continue with the original team while its sessions are active, or load the project recovery files in a new session.</p>
+        <div class="info-card-meta">
+          <span class="meta-tag">Direct Human Takeover</span>
+          <span class="meta-tag">Project Milestone Memory</span>
+          <span class="meta-tag">Next-Day Resume</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      <div>SuperARIS — Built on <a href="https://herdr.dev">Herdr</a> &amp; <a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep">ARIS</a>.</div>
+      <div><a href="https://github.com/wanshuiyin/SuperARIS/blob/main/LICENSE">MIT License</a> · SuperARIS</div>
+    </footer>
+
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const I18N = {
+        en: {
+          nav_workbench: "Workbench",
+          nav_architecture: "Why SuperARIS",
+          eyebrow: "Visible Multi-Pane Research Team · One Command Startup",
+          hero_subtitle: "Discuss a research goal with your main agent. Codex checks the evidence, Gemini helps shape and write the paper, and a fresh background reviewer brings an independent perspective.",
+          sidebar_artifacts: "Project Files",
+          card1_kicker: "01 · Specialized Research Team",
+          card1_title: "A research team you can work alongside",
+          card1_desc: "Bring the research into one project. Your main agent holds the goal, Codex implements and checks evidence, and Gemini discusses ideas and writes substantive prose. Step into any live session when you need to.",
+          card2_kicker: "02 · ARIS Workflows",
+          card2_title: "A full pipeline, a workflow, or a single skill",
+          card2_desc: "Ask your main agent to carry a project forward, delegate an experimental workflow to engineering, or use a writing skill with Gemini. ARIS keeps its original review and acceptance gates; configured reviewers work in the background.",
+          card3_kicker: "03 · Multi-Day Research Continuity",
+          card3_title: "Return to the project. Continue from its files.",
+          card3_desc: "Reopen the project and read its saved decisions, results, and pending work. Continue with the original team while its sessions are active, or load the project recovery files in a new session.",
+          mcp_title: "⚡ Background reviewer · Fresh context",
+          mcp_body: "Read <code>paper/method.tex</code> alongside <code>results/table1.json</code>. The reviewer asks for a clearer uncertainty statement; Gemini revises it and Codex checks the values.",
+          link_pipeline:"Full pipeline",link_ideas:"Ideas",link_experiments:"Experiments",link_review:"Review",link_writing:"Writing",link_guide:"Project guide ↗",fresh_context:"Fresh context",record_title:"Project record",review_toggle:"Background review",theme_dark:"Dark",theme_warm:"Warm",replay:"↺ Replay",demo_note:"Interactive walkthrough · illustrative project and data. Models and roles are configurable.",install_note:"Python 3.10+ · macOS / Linux · Configure Herdr and your selected native CLIs. Install & guide →",
+          history_label: "Earlier in this session"
+        },
+        zh: {
+          nav_workbench: "实景工作台",
+          nav_architecture: "核心价值",
+          eyebrow: "三窗格可见科研团队 · 单命令即刻启动",
+          hero_subtitle: "与主 Agent 讨论研究目标，让 Codex 核查证据，Gemini 共同构思并主写论文，再由全新上下文的后台 reviewer 提出独立意见。",
+          sidebar_artifacts: "项目产物",
+          card1_kicker: "01 · 科研角色按专长分工",
+          card1_title: "与你共同推进研究的团队",
+          card1_desc: "把研究放在同一个项目里：主 Agent 持有目标，Codex 实现并核查证据，Gemini 参与想法讨论并主写正文。你可以随时进入常驻会话，直接交流与接手。",
+          card2_kicker: "02 · ARIS 科研流程",
+          card2_title: "完整 pipeline、单段 workflow，或一个 skill",
+          card2_desc: "主 Agent 可以推进完整项目，也可将实验 workflow 委派给工程角色、将写作 skill 交给 Gemini。ARIS 保留原有 review 与验收门槛，已配置的独立 reviewer 继续在后台协作。",
+          card3_kicker: "03 · 跨天科研连续性",
+          card3_title: "回到项目，沿保存的记录继续",
+          card3_desc: "重新打开项目，读取已保存的决定、结果与待办。仍在运行的原团队直接续接；新会话则从项目恢复文件重新接上上下文。",
+          mcp_title: "⚡ 后台 reviewer · 全新上下文",
+          mcp_body: "对照读取 <code>paper/method.tex</code> 与 <code>results/table1.json</code>。reviewer 提醒补全不确定性说明，Gemini 修订表述，Codex 核对数值。",
+          link_pipeline:"完整科研",link_ideas:"选题",link_experiments:"实验",link_review:"评审",link_writing:"论文",link_guide:"项目指南 ↗",fresh_context:"全新上下文",record_title:"项目记录",review_toggle:"后台 review",theme_dark:"深色",theme_warm:"暖米",replay:"↺ 重播",demo_note:"交互演示 · 示例项目与数据。模型与分工可按需配置。",install_note:"Python 3.10+ · macOS / Linux · 配置 Herdr 与所选原生 CLI。安装与指南 →",
+          history_label: "本轮会话前序记录"
+        }
+      };
+
+      const SCENES = [
+        {
+          id: "launch",
+          num: "01",
+          label: { en: "Launch", zh: "一键启动" },
+          caption: {
+            en: "Stage 1/6 · Run `superaris` — pick your team roles in a quick CLI wizard and open the 3-pane workbench",
+            zh: "第 1/6 幕 · 运行 `superaris` — 在终端内快速确认角色分工，一键拉起三窗格科研工作台"
+          },
+          focusedPane: "main",
+          badges: { main: "setup", eng: "ready", writer: "ready" },
+          files: { plan: "init", exp: "--", tex: "--", audit: "--" },
+          mcpVisible: false,
+          inputs: {
+            main: "superaris",
+            engineer: "# Ready for experiment & verification tasks",
+            writer: "# Ready for idea discussion & paper drafting"
+          },
+          panes: {
+            main: {
+              history: [],
+              steps: [
+                { at: 150, type: "cmd", text: "superaris" },
+                {
+                  at: 950,
+                  type: "wizard",
+                  title: {
+                    en: "SuperARIS Setup · Detected Claude Code, Codex, Antigravity",
+                    zh: "SuperARIS 启动向导 · 已检测到 Claude Code、Codex、Antigravity"
+                  },
+                  rows: {
+                    en: [
+                      ["Project lead & workflow:", "Claude Code"],
+                      ["Experiments & fact check:", "OpenAI Codex"],
+                      ["Argument & paper writing:", "Antigravity (Gemini 4 Argon)"],
+                      ["Project:", "~/research/sparse-attn-paper"]
+                    ],
+                    zh: [
+                      ["课题统筹与推进主控:", "Claude Code"],
+                      ["代码实现、跑实验与核查:", "OpenAI Codex"],
+                      ["立意共创与论文正文主写:", "Antigravity (Gemini 4 Argon)"],
+                      ["项目目录:", "~/research/sparse-attn-paper"]
+                    ]
+                  }
+                },
+                {
+                  at: 2200,
+                  type: "skill",
+                  text: {
+                    en: "⚡ Workspace ready · 3 panes connected to ~/research/sparse-attn-paper",
+                    zh: "⚡ 工作台已就绪 · 三窗格已连接至 ~/research/sparse-attn-paper"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [],
+              steps: [
+                {
+                  at: 700,
+                  type: "info",
+                  text: {
+                    en: "Connected as [engineer]. Ready to run benchmarks, ablations, and numerical audits.",
+                    zh: "已作为 [engineer] 就绪，随时可执行基准实验、消融对比与数值核查。"
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [],
+              steps: [
+                {
+                  at: 900,
+                  type: "info",
+                  text: {
+                    en: "Connected as [writer]. Ready to co-develop the paper narrative and draft LaTeX sections.",
+                    zh: "已作为 [writer] 就绪，随时可参与核心立意讨论并撰写 LaTeX 论文正文。"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "recover",
+          num: "02",
+          label: { en: "Discuss & Plan", zh: "研究讨论" },
+          caption: {
+            en: "Stage 2/6 · Discuss the research bottleneck with your lead agent and co-design the formulation with Gemini",
+            zh: "第 2/6 幕 · 与主 Agent 梳理研究痛点，并拉入 Gemini 共同打磨核心方法立意"
+          },
+          focusedPane: "main",
+          badges: { main: "planning", eng: "ready", writer: "co-design" },
+          files: { plan: "updated", exp: "--", tex: "--", audit: "--" },
+          mcpVisible: false,
+          inputs: {
+            main: "/research-refine Focus on sub-quadratic KV routing without accuracy drop on 32k context",
+            engineer: "# Standing by for baseline & ablation plan",
+            writer: "Framing Theorem 1: bounded routing regret under top-k block sparsity"
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "cmd", text: "superaris" },
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ 3-pane research team active (Lead: CC, Engineer: Codex, Writer: Gemini 4).",
+                    zh: "✓ 三窗格科研团队已激活（主控: CC，实验核查: Codex，讨论与主写: Gemini 4）。"
+                  }
+                }
+              ],
+              steps: [
+                { at: 150, type: "cmd", text: "/research-refine Focus on sub-quadratic KV routing without accuracy drop on 32k context" },
+                {
+                  at: 1050,
+                  type: "skill",
+                  text: {
+                    en: "⚡ Skill(/research-refine) · Synthesizing literature gap & method hypothesis",
+                    zh: "⚡ 调用技能(/research-refine) · 梳理相关文献缺口与核心方法假设"
+                  }
+                },
+                {
+                  at: 2150,
+                  type: "file",
+                  head: "IDEA_REPORT.md",
+                  meta: "+48 lines",
+                  body: {
+                    en: "Hypothesis: Block-wise sinkhorn routing keeps 99.1% recall at 4.2x prefill speedup.",
+                    zh: "核心假设：分块 Sinkhorn 路由在 4.2 倍预填充加速下保持 99.1% 注意力召回率。"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [],
+              steps: [
+                {
+                  at: 1300,
+                  type: "info",
+                  text: {
+                    en: "Checked dataset cache: LongBench-32k and RULER splits verified on local NVMe.",
+                    zh: "已检查本地数据集缓存：LongBench-32k 与 RULER 评测集已在本地 NVMe 就绪。"
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [],
+              steps: [
+                {
+                  at: 600,
+                  type: "cmd",
+                  text: "Co-designing problem formulation for IDEA_REPORT.md"
+                },
+                {
+                  at: 1750,
+                  type: "file",
+                  head: "notes/formulation.md",
+                  meta: "Gemini 4 Argon",
+                  body: {
+                    en: " sharpened motivation: contrast static local windows vs. query-aware block routing.",
+                    zh: "提炼核心故事线：对比静态局部窗口与查询感知动态分块路由的本质差异。"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "delegate",
+          num: "03",
+          label: { en: "Dispatch Tasks", zh: "分工派发" },
+          caption: {
+            en: "Stage 3/6 · Lead agent dispatches parallel tasks: Codex runs the 32k benchmark while Gemini drafts Section 3",
+            zh: "第 3/6 幕 · 主 Agent 并行派发任务：Codex 跑 32k 对比实验，Gemini 同步撰写第 3 章方法正文"
+          },
+          focusedPane: "main",
+          badges: { main: "dispatching", eng: "assigned", writer: "assigned" },
+          files: { plan: "v2", exp: "queued", tex: "queued", audit: "--" },
+          mcpVisible: false,
+          inputs: {
+            main: "Dispatch 32k ablation sweep to Codex and Section 3 method draft to Gemini",
+            engineer: "pytest tests/test_kernel.py && python experiments/run_ablation.py --ctx 32k",
+            writer: "Read the prepared ARIS paper-write skill; draft paper/method.tex from IDEA_REPORT.md"
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "cmd", text: "/research-refine Focus on sub-quadratic KV routing..." },
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Updated IDEA_REPORT.md with Gemini's query-aware routing formulation.",
+                    zh: "✓ 已结合 Gemini 的动态分块路由立意更新 IDEA_REPORT.md。"
+                  }
+                }
+              ],
+              steps: [
+                { at: 150, type: "cmd", text: "Dispatch 32k ablation sweep to Codex and Section 3 method draft to Gemini" },
+                {
+                  at: 1050,
+                  type: "handoff",
+                  text: {
+                    en: "➔ Assigned to [engineer · Codex]: Run FlashAttention-2 vs. Ours (8k/16k/32k) & export results/table1.json",
+                    zh: "➔ 派发给 [engineer · Codex]：运行 FlashAttention-2 与本文方法 (8k/16k/32k) 对比并导出 results/table1.json"
+                  }
+                },
+                {
+                  at: 2150,
+                  type: "handoff",
+                  text: {
+                    en: "➔ Assigned to [writer · Gemini 4]: Write Section 3 (Unified Sparse Routing) in paper/method.tex",
+                    zh: "➔ 派发给 [writer · Gemini 4]：在 paper/method.tex 主笔撰写第 3 章《统一稀疏路由机制》"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ LongBench-32k & RULER evaluation splits verified.",
+                    zh: "✓ LongBench-32k 与 RULER 评测集已校验通过。"
+                  }
+                }
+              ],
+              steps: [
+                {
+                  at: 1250,
+                  type: "skill",
+                  text: {
+                    en: "⚡ Task received · Preparing 3-seed benchmark sweep on 32k context",
+                    zh: "⚡ 已接收实验任务 · 准备启动 32k 上下文 3 随机种子对比实验"
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Problem formulation notes synced to IDEA_REPORT.md.",
+                    zh: "✓ 核心立意与形式化定义已同步至 IDEA_REPORT.md。"
+                  }
+                }
+              ],
+              steps: [
+                {
+                  at: 2300,
+                  type: "skill",
+                  text: {
+                    en: "⚡ Task received · Structuring Section 3 equations & complexity table",
+                    zh: "⚡ 已接收写作任务 · 正在组织第 3 章公式推导与复杂度对比表"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "execute",
+          num: "04",
+          label: { en: "Parallel Work", zh: "并行实干" },
+          caption: {
+            en: "Stage 4/6 · Codex executes experiments & records the experiment output while Gemini writes `paper/method.tex` in parallel",
+            zh: "第 4/6 幕 · Codex 执行实验并保存表格数据，Gemini 同步完成 `paper/method.tex` 正文撰写"
+          },
+          focusedPane: "engineer",
+          badges: { main: "watching", eng: "running", writer: "writing" },
+          files: { plan: "v2", exp: "updated", tex: "updated", audit: "--" },
+          mcpVisible: false,
+          inputs: {
+            main: "# Monitoring live experiment metrics & section draft...",
+            engineer: "python experiments/run_ablation.py --ctx 32768 --seeds 3 --out results/table1.json",
+            writer: "Writing Section 3.2: Differentiable Top-K Block Selection & Theorem 1"
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "cmd", text: "Dispatch 32k ablation sweep to Codex and Section 3 draft to Gemini" },
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Tasks running in parallel across [engineer · Codex] and [writer · Gemini 4].",
+                    zh: "✓ 实验与论文撰写正在 [engineer · Codex] 与 [writer · Gemini 4] 并行推进。"
+                  }
+                }
+              ],
+              steps: [
+                {
+                  at: 900,
+                  type: "info",
+                  text: {
+                    en: "Live update from Codex: 32k kernel unit tests passed (12/12); benchmark sweep in progress.",
+                    zh: "收到 Codex 实时进度：32k 算子单元测试全部通过 (12/12)，正在汇总基准评测指标。"
+                  }
+                },
+                {
+                  at: 2500,
+                  type: "skill",
+                  text: {
+                    en: "⚡ Both artifacts arrived: results/table1.json + paper/method.tex ready for cross-check",
+                    zh: "⚡ 双端成果已就位：results/table1.json 与 paper/method.tex 已落盘，准备启动交叉核对"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Task received: 3-seed benchmark sweep (8k / 16k / 32k).",
+                    zh: "✓ 已接收任务：3 随机种子对比实验 (8k / 16k / 32k)。"
+                  }
+                }
+              ],
+              steps: [
+                { at: 150, type: "cmd", text: "python experiments/run_ablation.py --ctx 32768 --seeds 3" },
+                {
+                  at: 1100,
+                  type: "info",
+                  text: {
+                    en: "Dense-32k: 142.4ms | FlashAttn-2: 68.1ms | Ours (SparseSinkhorn): 33.8ms (2.01x vs FA2)",
+                    zh: "Dense-32k: 142.4ms | FlashAttn-2: 68.1ms | 本文方法: 33.8ms (较 FA2 提速 2.01x)"
+                  }
+                },
+                {
+                  at: 2150,
+                  type: "file",
+                  head: "results/table1.json",
+                  meta: "+64 lines · verified",
+                  body: {
+                    en: "+ \"longbench_32k_acc\": { \"fa2\": 41.8, \"ours\": 41.7, \"std\": 0.18 }",
+                    zh: "+ \"longbench_32k_acc\": { \"fa2\": 41.8, \"ours\": 41.7, \"std\": 0.18 }"
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Task received: Draft Section 3 in paper/method.tex.",
+                    zh: "✓ 已接收任务：撰写 paper/method.tex 第 3 章方法正文。"
+                  }
+                }
+              ],
+              steps: [
+                { at: 350, type: "cmd", text: "Read the prepared ARIS paper-write skill; draft Section 3 in paper/method.tex" },
+                {
+                  at: 1450,
+                  type: "file",
+                  head: "paper/method.tex",
+                  meta: "+118 lines · Gemini 4",
+                  body: {
+                    en: "+ \\section{Query-Aware Block Routing}\\n+ \\begin{theorem}[Bounded Routing Regret] ...",
+                    zh: "+ \\section{查询感知动态分块路由}\\n+ \\begin{theorem}[有界路由遗憾界] ..."
+                  }
+                },
+                {
+                  at: 2450,
+                  type: "info",
+                  text: {
+                    en: "Drafted complexity comparison table and integrated empirical latency placeholders.",
+                    zh: "已完成复杂度对比表与定理叙述，并填入实测吞吐率数据。"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "review",
+          num: "05",
+          label: { en: "Audit & Revise", zh: "审稿核查" },
+          caption: {
+            en: "Stage 5/6 · Independent background reviewer & Codex check the draft against the supplied evidence; Gemini tightens wording",
+            zh: "第 5/6 幕 · 独立后台审稿人与 Codex 对照已提供的证据核查论文结论，Gemini 当场完成措辞修订"
+          },
+          focusedPane: "writer",
+          badges: { main: "auditing", eng: "verifying", writer: "revising" },
+          files: { plan: "v2", exp: "verified", tex: "revised", audit: "updated" },
+          mcpVisible: true,
+          inputs: {
+            main: "/paper-claim-audit Verify paper/method.tex against results/table1.json",
+            engineer: "python tools/verify_numbers.py --tex paper/method.tex --json results/table1.json",
+            writer: "Applying precision fix on line 84: report exact 41.7 ± 0.18 on LongBench-32k"
+          },
+          panes: {
+            main: {
+              history: [
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Collected results/table1.json (Codex) and paper/method.tex (Gemini 4).",
+                    zh: "✓ 已收回 results/table1.json (Codex) 与 paper/method.tex (Gemini 4)。"
+                  }
+                }
+              ],
+              steps: [
+                { at: 150, type: "cmd", text: "/paper-claim-audit Verify paper/method.tex against results/table1.json" },
+                {
+                  at: 1050,
+                  type: "skill",
+                  text: {
+                    en: "⚡ Fresh-context reviewer found 1 precision note on LongBench-32k std (±0.18 vs ±0.1)",
+                    zh: "⚡ 独立审稿发现 1 处数字精度待收紧：LongBench-32k 标准差应写为 ±0.18 而非 ±0.1"
+                  }
+                },
+                {
+                  at: 2400,
+                  type: "file",
+                  head: "CLAIM_AUDIT.md",
+                  meta: "14/14 claims matched",
+                  body: {
+                    en: "All latency & accuracy numbers in paper/method.tex now match results/table1.json.",
+                    zh: "paper/method.tex 中全部 14 项时延与准确率数字均已与原始实验 JSON 严格对齐。"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Exported results/table1.json (2.01x speedup over FA2 at 32k).",
+                    zh: "✓ 已导出 results/table1.json (32k 下较 FA2 提速 2.01 倍)。"
+                  }
+                }
+              ],
+              steps: [
+                { at: 500, type: "cmd", text: "python tools/verify_numbers.py --tex paper/method.tex --json results/table1.json" },
+                {
+                  at: 1950,
+                  type: "info",
+                  text: {
+                    en: "✓ Fact check complete: table values match the supplied experiment JSON.",
+                    zh: "✓ 事实核查完成：表格数值与提供的实验 JSON 一致。"
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Completed initial draft of paper/method.tex (+118 lines).",
+                    zh: "✓ 已完成 paper/method.tex 初稿 (+118 行)。"
+                  }
+                }
+              ],
+              steps: [
+                {
+                  at: 1350,
+                  type: "file",
+                  head: "paper/method.tex (Line 84)",
+                  meta: "precision fix",
+                  body: {
+                    en: "- achieves 41.7 \\pm 0.1 on LongBench-32k\\n+ achieves 41.7 \\pm 0.18 on LongBench-32k (matching Table 1)",
+                    zh: "- achieves 41.7 \\pm 0.1 on LongBench-32k\\n+ achieves 41.7 \\pm 0.18 on LongBench-32k (与表 1 严格一致)"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "handoff",
+          num: "06",
+          label: { en: "Take Over / Resume", zh: "随时接手与续接" },
+          caption: {
+            en: "Stage 6/6 · Type directly into any pane to steer, or run `superaris` tomorrow to pick up right where you left off",
+            zh: "第 6/6 幕 · 你随时可在任一窗格直接输入接手，或隔天运行 `superaris` 原地续接全部研究脉络"
+          },
+          focusedPane: "main",
+          badges: { main: "interactive", eng: "idle", writer: "idle" },
+          files: { plan: "saved", exp: "verified", tex: "ready", audit: "clean" },
+          mcpVisible: false,
+          inputs: {
+            main: "Let's add a 64k extrapolation plot in Figure 2 before compiling the PDF",
+            engineer: "# Ready for your direct command or next benchmark run",
+            writer: "# Ready to refine abstract & Figure 2 caption"
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "cmd", text: "/paper-claim-audit Verify paper/method.tex against results/table1.json" },
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Section 3 and Table 1 verified (14/14 claims matched).",
+                    zh: "✓ 第 3 章正文与表 1 数据已全部核对通过 (14/14 处结论对齐)。"
+                  }
+                }
+              ],
+              steps: [
+                {
+                  at: 200,
+                  type: "skill",
+                  text: {
+                    en: "⚡ Open project recovery → read IDEA_REPORT.md, results/table1.json and the next work item. Continue with the original team while its sessions are active",
+                    zh: "⚡ 打开项目恢复入口 → 读回 IDEA_REPORT.md、results/table1.json 与下一项工作；续接仍在运行的原团队"
+                  }
+                },
+                {
+                  at: 1200,
+                  type: "cmd",
+                  text: "Let's add a 64k extrapolation plot in Figure 2 before compiling the PDF"
+                },
+                {
+                  at: 2250,
+                  type: "info",
+                  text: {
+                    en: "Lead agent: Read task notice → open packet. Understood — routing 64k scaling sweep to Codex and Figure 2 caption update to Gemini.",
+                    zh: "主控 Agent：读取任务通知 → 打开工作包。收到你的指令 — 正在将 64k 外推实验派给 Codex，并由 Gemini 同步更新图 2 图注。"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Fact check complete: 14/14 table cells exact match.",
+                    zh: "✓ 事实核查完成：14/14 处数值完全一致。"
+                  }
+                }
+              ],
+              steps: [
+                {
+                  at: 1500,
+                  type: "info",
+                  text: {
+                    en: "Interactive shell open — you can also click here and run any custom script directly.",
+                    zh: "原生终端保持开启 — 你随时可点击本窗格直接运行自定义实验脚本。"
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [
+                {
+                  type: "info",
+                  text: {
+                    en: "✓ Revised paper/method.tex (Line 84 variance aligned).",
+                    zh: "✓ 已完成 paper/method.tex 精度修订。"
+                  }
+                }
+              ],
+              steps: [
+                {
+                  at: 1700,
+                  type: "info",
+                  text: {
+                    en: "Open task notice → read the next packet. Ready to co-edit Figure 2 discussion and compile `paper/main.pdf`.",
+                    zh: "打开任务通知 → 读取下一份工作包。继续与你共创图 2 结果分析并编译 `paper/main.pdf`。"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ];
+
+      const SCENE_DURATION_MS = 6400;
+      const TYPE_CHAR_MS = 22;
+      const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+      const state = {
+        speed:1.5, theme:"dark", showReview:true,
+        lang: "en",
+        sceneIndex: 0,
+        isPlaying: !reducedMotionQuery.matches,
+        isDocHidden: Boolean(document.hidden),
+        isInViewport: true,
+        reducedMotion: Boolean(reducedMotionQuery.matches),
+        mobilePane: "main",
+        elapsedMs: 0,
+        lastFrameTs: 0,
+        rafId: null,
+        revealedCounts: { main: 0, engineer: 0, writer: 0 }
+      };
+
+      // DOM elements
+      const stageStepsEl = document.getElementById("stage-steps");
+      const stageCaptionEl = document.getElementById("stage-caption");
+      const playPauseBtn = document.getElementById("play-pause-btn");
+      const playPauseIcon = document.getElementById("play-pause-icon");
+      const playPauseLabel = document.getElementById("play-pause-label");
+      const replayBtn = document.getElementById("replay-btn");
+      const mcpDrawerEl = document.getElementById("mcp-drawer");
+      const mcpTitleEl = document.getElementById("mcp-title");
+      const mcpBodyEl = document.getElementById("mcp-body");
+      const windowStageBadge = document.getElementById("window-stage-badge");
+
+      function pickLang(val) {
+        if (val && typeof val === "object" && !Array.isArray(val)) {
+          return val[state.lang] || val.en || "";
+        }
+        return val || "";
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function isEffectivelyRunning() {
+        return state.isPlaying && !state.isDocHidden && state.isInViewport && !state.reducedMotion;
+      }
+
+      function typingDuration(sc) { return (sc.inputs[sc.focusedPane] || "").length * TYPE_CHAR_MS; }
+      function sceneDuration(sc) {
+        const last = Math.max(0, ...Object.values(sc.panes).flatMap(p => (p.steps || []).map(x => x.at || 0)));
+        return Math.max(SCENE_DURATION_MS, typingDuration(sc) + last + 950);
+      }
+      function syncClock() {
+        if (!isEffectivelyRunning()) {
+          if (state.rafId !== null) cancelAnimationFrame(state.rafId);
+          state.rafId = null; state.lastFrameTs = 0;
+        } else if (state.rafId === null) state.rafId = requestAnimationFrame(onAnimationFrame);
+      }
+
+      function syncPlayButtonUI() {
+        if (state.reducedMotion) {
+          playPauseIcon.textContent="→";playPauseLabel.textContent=state.lang === "zh" ? "下一幕" : "Next";
+        } else if (state.isPlaying) {
+          playPauseIcon.textContent = "⏸";
+          playPauseLabel.textContent = state.lang === "zh" ? "暂停" : "Pause";
+        } else {
+          playPauseIcon.textContent = "▶";
+          playPauseLabel.textContent = state.lang === "zh" ? "播放" : "Play";
+        }
+      }
+
+      function buildStageButtons() {
+        stageStepsEl.innerHTML = "";
+        SCENES.forEach((sc, idx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "stage-btn" + (idx === state.sceneIndex ? " active" : "");
+          btn.setAttribute("role", "tab");
+          btn.setAttribute("aria-selected", idx === state.sceneIndex ? "true" : "false");
+          btn.innerHTML =
+            '<span class="stage-num">' + sc.num + "</span>" +
+            "<span>" + escapeHtml(pickLang(sc.label)) + "</span>" +
+            '<span class="stage-progress" id="prog-' + idx + '"></span>';
+          btn.addEventListener("click", function () {
+            // Manual stage selection pauses auto-advance so user can inspect freely
+            state.isPlaying = false;
+            syncPlayButtonUI();
+            loadScene(idx, { revealImmediately: true });
+          });
+          stageStepsEl.appendChild(btn);
+        });
+      }
+
+      function renderEntryElement(item, paneKey, isHistory) {
+        const div = document.createElement("div");
+        div.className = "t-entry" + (isHistory ? " t-history" : "");
+        const pChar = paneKey === "main" ? "❯" : (paneKey === "engineer" ? "›" : ">");
+
+        if (item.type === "cmd") {
+          div.className += " t-cmd";
+          div.innerHTML = '<span class="p-char">' + pChar + "</span>" + escapeHtml(pickLang(item.text));
+        } else if (item.type === "skill") {
+          div.innerHTML = '<span class="t-skill">' + escapeHtml(pickLang(item.text)) + "</span>";
+        } else if (item.type === "info") {
+          div.className += " t-info";
+          div.textContent = pickLang(item.text);
+        } else if (item.type === "handoff") {
+          div.className += " t-handoff";
+          div.textContent = pickLang(item.text);
+        } else if (item.type === "wizard") {
+          const rows = pickLang(item.rows) || [];
+          const rowsHtml = rows.map(function (r) {
+            return (
+              '<div class="t-cli-wizard-row">' +
+                '<span class="q-mark">✓</span>' +
+                '<span>' + escapeHtml(r[0]) + '</span>' +
+                '<span class="ans-val">' + escapeHtml(r[1]) + '</span>' +
+              '</div>'
+            );
+          }).join("");
+          div.className += " t-cli-wizard";
+          div.innerHTML =
+            '<div class="t-cli-wizard-title">' +
+              '<span>' + escapeHtml(pickLang(item.title)) + '</span>' +
+              '<span style="color:var(--codex-green)">[saved]</span>' +
+            '</div>' + rowsHtml;
+        } else if (item.type === "file") {
+          const rawBody = pickLang(item.body);
+          const bodyHtml = escapeHtml(rawBody)
+            .split("\\n")
+            .map(function (line) {
+              if (line.trim().startsWith("+")) return '<div class="t-diff-add">' + line + "</div>";
+              if (line.trim().startsWith("-")) return '<div class="t-diff-del">' + line + "</div>";
+              return "<div>" + line + "</div>";
+            })
+            .join("");
+          div.className += " t-file-card";
+          div.innerHTML =
+            '<div class="t-file-head"><span>📄 ' + escapeHtml(item.head) + "</span>" +
+            '<span class="t-muted">' + escapeHtml(item.meta || "") + "</span></div>" +
+            "<div>" + bodyHtml + "</div>";
+        }
+        return div;
+      }
+
+      function updateInputsForElapsed(sc, elapsedMs, revealAll) {
+        ["main", "engineer", "writer"].forEach(function (paneKey) {
+          const inputEl = document.getElementById("input-" + paneKey);
+          const fullText = sc.inputs[paneKey] || "";
+          if (revealAll || paneKey !== sc.focusedPane) {
+            inputEl.textContent = fullText;
+          } else {
+            const charsToShow = Math.min(fullText.length, Math.floor(elapsedMs / TYPE_CHAR_MS));
+            inputEl.textContent = fullText.slice(0, charsToShow);
+          }
+        });
+      }
+
+      function revealStepsUpTo(sc, elapsedMs, revealAll) {
+        ["main", "engineer", "writer"].forEach(function (paneKey) {
+          const paneData = sc.panes[paneKey] || { history: [], steps: [] };
+          const steps = paneData.steps || [];
+          const container = document.getElementById("logs-" + paneKey);
+          const streamEl = document.getElementById("stream-" + paneKey);
+
+          let targetCount = 0;
+          for (let i = 0; i < steps.length; i++) {
+            const threshold = revealAll ? 0 : typingDuration(sc) + (steps[i].at || 0);
+            if (revealAll || elapsedMs >= threshold) {
+              targetCount = i + 1;
+            }
+          }
+
+          while (state.revealedCounts[paneKey] < targetCount) {
+            const stepItem = steps[state.revealedCounts[paneKey]];
+            container.appendChild(renderEntryElement(stepItem, paneKey, false));
+            state.revealedCounts[paneKey]++;
+            streamEl.scrollTop = streamEl.scrollHeight;
+          }
+        });
+      }
+
+      function updateRecord(sc, complete) {
+        const lines = state.lang === "zh" ? ["目标 · 查询感知稀疏路由", "决定 · 对比静态分块基线", "分工 · 工程核查 / 共同写作", "交付 · 实验 JSON + 方法正文", "修订 · 不确定性说明与数值对齐", "恢复 · 读回决定、结果与下一步"] :
+          ["Goal · query-aware sparse routing", "Decision · compare static blocks", "Owners · evidence / paper prose", "Received · results JSON + method", "Revised · uncertainty statement", "Recover · read decisions & next work"];
+        const count = Math.max(1, state.sceneIndex + (complete ? 1 : 0));
+        document.getElementById("project-record").textContent = lines.slice(0,count).join("\n");
+        document.getElementById("project-record").style.whiteSpace="pre-line";
+        mcpDrawerEl.classList.toggle("visible", Boolean(sc.mcpVisible && state.showReview && complete));
+      }
+
+      function updateProgressBars(pct) {
+        SCENES.forEach(function (_, idx) {
+          const bar = document.getElementById("prog-" + idx);
+          if (!bar) return;
+          if (idx < state.sceneIndex) {
+            bar.style.width = "100%";
+          } else if (idx === state.sceneIndex) {
+            bar.style.width = Math.min(100, Math.max(0, pct)) + "%";
+          } else {
+            bar.style.width = "0%";
+          }
+        });
+      }
+
+      function loadScene(index, opts) {
+        const options = opts || {};
+        const revealAll = options.revealImmediately === undefined ? state.reducedMotion : Boolean(options.revealImmediately);
+
+        state.sceneIndex = (index + SCENES.length) % SCENES.length;
+        state.elapsedMs = revealAll ? sceneDuration(SCENES[state.sceneIndex]) : (options.elapsedMs || 0);
+        state.revealedCounts = { main: 0, engineer: 0, writer: 0 };
+
+        const sc = SCENES[state.sceneIndex];
+
+        // Update stage buttons active state
+        const btns = stageStepsEl.querySelectorAll(".stage-btn");
+        btns.forEach(function (b, idx) {
+          b.classList.toggle("active", idx === state.sceneIndex);
+          b.setAttribute("aria-selected", idx === state.sceneIndex ? "true" : "false");
+        });
+
+        stageCaptionEl.textContent = pickLang(sc.caption);
+        windowStageBadge.textContent = "project-agent · " + sc.id;
+
+        // Focused pane & cursors
+        ["main", "engineer", "writer"].forEach(function (paneKey) {
+          const paneEl = document.getElementById("pane-" + paneKey);
+          const cursorEl = document.getElementById("cursor-" + paneKey);
+          const isFocus = sc.focusedPane === paneKey;
+          paneEl.classList.toggle("pane-focused", isFocus);
+          cursorEl.style.display = isFocus ? "inline-block" : "none";
+        });
+
+        // Sidebar role status
+        document.getElementById("badge-main").textContent = sc.badges.main;
+        document.getElementById("badge-eng").textContent = sc.badges.eng;
+        document.getElementById("badge-writer").textContent = sc.badges.writer;
+
+        document.getElementById("sidebar-agent-main").classList.toggle("active-role", sc.focusedPane === "main");
+        document.getElementById("sidebar-agent-eng").classList.toggle("active-role", sc.focusedPane === "engineer");
+        document.getElementById("sidebar-agent-writer").classList.toggle("active-role", sc.focusedPane === "writer");
+
+        // Sidebar files status
+        const fileMap = [
+          ["file-plan", "file-plan-stat", sc.files.plan],
+          ["file-exp", "file-exp-stat", sc.files.exp],
+          ["file-tex", "file-tex-stat", sc.files.tex],
+          ["file-audit", "file-audit-stat", sc.files.audit]
+        ];
+        fileMap.forEach(function (pair) {
+          const rowEl = document.getElementById(pair[0]);
+          const statEl = document.getElementById(pair[1]);
+          statEl.textContent = pair[2];
+          rowEl.classList.toggle("updated", pair[2] === "updated" || pair[2] === "revised" || pair[2] === "verified");
+        });
+
+        // Render history items for each pane
+        ["main", "engineer", "writer"].forEach(function (paneKey) {
+          const container = document.getElementById("logs-" + paneKey);
+          container.innerHTML = "";
+          const paneData = sc.panes[paneKey] || { history: [], steps: [] };
+          const historyItems = paneData.history || [];
+
+          if (historyItems.length > 0) {
+            historyItems.forEach(function (hItem) {
+              container.appendChild(renderEntryElement(hItem, paneKey, true));
+            });
+            const divider = document.createElement("div");
+            divider.className = "history-divider";
+            divider.textContent = I18N[state.lang].history_label;
+            container.appendChild(divider);
+          }
+        });
+
+        // Background reviewer drawer
+        updateRecord(sc, revealAll || state.elapsedMs >= sceneDuration(sc)-950);
+
+        // Update input lines & reveal steps
+        updateInputsForElapsed(sc, state.elapsedMs, revealAll);
+        revealStepsUpTo(sc, state.elapsedMs, revealAll);
+        updateProgressBars(state.elapsedMs / sceneDuration(sc) * 100);
+        syncClock();
+      }
+
+      function onAnimationFrame(ts) {
+        state.rafId = null;
+        if (!state.lastFrameTs) {
+          state.lastFrameTs = ts;
+        }
+        const delta = Math.min(120, Math.max(0, ts - state.lastFrameTs));
+        state.lastFrameTs = ts;
+
+        if (isEffectivelyRunning()) {
+          state.elapsedMs += delta * state.speed;
+          const sc = SCENES[state.sceneIndex];
+          updateInputsForElapsed(sc, state.elapsedMs, false);
+          revealStepsUpTo(sc, state.elapsedMs, false);
+          updateRecord(sc, state.elapsedMs >= sceneDuration(sc)-950);
+          updateProgressBars((state.elapsedMs / sceneDuration(sc)) * 100);
+
+          if (state.elapsedMs >= sceneDuration(SCENES[state.sceneIndex])) {
+            loadScene((state.sceneIndex + 1) % SCENES.length, { revealImmediately: false });
+          }
+        }
+
+        syncClock();
+      }
+
+      function setMobilePane(paneKey) {
+        state.mobilePane = paneKey;
+        ["main", "engineer", "writer"].forEach(function (k) {
+          document.getElementById("pane-" + k).classList.toggle("mobile-active", k === paneKey);
+        });
+        document.querySelectorAll(".mobile-pane-btn").forEach(function (btn) {
+          btn.classList.toggle("active", btn.getAttribute("data-pane") === paneKey);
+        });
+      }
+
+      function applyLanguage(lang) {
+        state.lang = lang;
+        document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+        document.getElementById("lang-en").classList.toggle("active", lang === "en");
+        document.getElementById("lang-zh").classList.toggle("active", lang === "zh");
+
+        const dict = I18N[lang];
+        document.querySelectorAll("[data-i18n]").forEach(function (el) {
+          const key = el.getAttribute("data-i18n");
+          if (dict[key]) el.textContent = dict[key];
+        });
+
+        document.getElementById("hero-subtitle").textContent = dict.hero_subtitle;
+        mcpTitleEl.textContent = dict.mcp_title;
+        mcpBodyEl.innerHTML = dict.mcp_body;
+
+        syncPlayButtonUI();
+        buildStageButtons();
+        loadScene(state.sceneIndex, { revealImmediately: state.reducedMotion, elapsedMs:state.elapsedMs });
+      }
+
+      // Controls
+      playPauseBtn.addEventListener("click", function () {
+        if (state.reducedMotion) {loadScene(state.sceneIndex+1,{revealImmediately:true});return;}
+        state.isPlaying = !state.isPlaying;
+        syncPlayButtonUI();
+        if (state.isPlaying && state.elapsedMs >= sceneDuration(SCENES[state.sceneIndex])) {
+          loadScene(state.sceneIndex, { revealImmediately: false });
+        }
+        syncClock();
+      });
+
+      replayBtn.addEventListener("click", function () {
+        if (state.reducedMotion) {
+          state.isPlaying = false;
+          syncPlayButtonUI();
+          loadScene(0, { revealImmediately: true });
+        } else {
+          state.isPlaying = true;
+          syncPlayButtonUI();
+          loadScene(0, { revealImmediately: false });
+        }
+      });
+
+      document.getElementById("lang-en").addEventListener("click", function () { applyLanguage("en"); });
+      document.getElementById("lang-zh").addEventListener("click", function () { applyLanguage("zh"); });
+
+      document.querySelectorAll(".mobile-pane-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          setMobilePane(btn.getAttribute("data-pane"));
+        });
+      });
+
+      // Copy install command
+      const copyBtn = document.getElementById("copy-cmd-btn");
+      copyBtn.addEventListener("click", async function () {
+        const cmd = "pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'";
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+          await navigator.clipboard.writeText(cmd);
+          copyBtn.textContent = state.lang === "zh" ? "已复制" : "Copied";
+        } catch (_) {
+          copyBtn.textContent = state.lang === "zh" ? "请手动复制" : "Select & copy";
+          const range=document.createRange();range.selectNodeContents(copyBtn.previousElementSibling);
+          const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+        }
+      });
+      document.getElementById("includeReview").addEventListener("change", function(e) {
+        state.showReview=e.target.checked;
+        const sc=SCENES[state.sceneIndex];updateRecord(sc,state.elapsedMs>=sceneDuration(sc)-950);
+      });
+      document.getElementById("playbackSpeed").addEventListener("change", function(e) {
+        state.speed = Number(e.target.value); state.lastFrameTs=0;
+      });
+      ["dark","warm"].forEach(function(theme) {
+        document.getElementById(theme === "dark" ? "themeDarkBtn" : "themeWarmBtn").addEventListener("click",function() {
+          state.theme=theme; document.body.dataset.theme=theme;
+          ["dark","warm"].forEach(function(t) {
+            const b=document.getElementById(t === "dark" ? "themeDarkBtn" : "themeWarmBtn");
+            b.classList.toggle("active", t===theme);b.setAttribute("aria-pressed",String(t===theme));
+          });
+        });
+      });
+
+      // Separate visibility & viewport listeners so neither overwrites user's Play/Pause choice
+      document.addEventListener("visibilitychange", function () {
+        state.isDocHidden = Boolean(document.hidden);
+        state.lastFrameTs = 0;
+        syncClock();
+      });
+
+      if ("IntersectionObserver" in window) {
+        const workbenchEl = document.querySelector(".herdr-window");
+        const io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            state.isInViewport = Boolean(entry.isIntersecting);
+            state.lastFrameTs = 0;
+            syncClock();
+          });
+        }, { threshold: 0.15 });
+        if (workbenchEl) io.observe(workbenchEl);
+      }
+
+      if (reducedMotionQuery.addEventListener) {
+        reducedMotionQuery.addEventListener("change", function (e) {
+          state.reducedMotion = Boolean(e.matches);
+          if (state.reducedMotion) {
+            state.isPlaying = false;
+            loadScene(state.sceneIndex, { revealImmediately: true });
+          }
+          syncPlayButtonUI();
+        });
+      }
+
+      // Read-only state hook for verification
+      window.SuperARISDemo = {
+        getState: function () {
+          const sc = SCENES[state.sceneIndex];
+          return {
+            language:state.lang, step:state.sceneIndex, playing:state.isPlaying,
+            visible:state.isInViewport, documentVisible:!state.isDocHidden,
+            speed:state.speed,theme:state.theme,showReview:state.showReview,elapsed:state.elapsedMs,
+            progress:state.elapsedMs/sceneDuration(sc), pendingCount:state.rafId===null?0:1,
+            sceneDuration:sceneDuration(sc),typingDuration:typingDuration(sc),
+            sceneIndex: state.sceneIndex,
+            sceneId: sc ? sc.id : "",
+            isPlaying: state.isPlaying,
+            isDocHidden: state.isDocHidden,
+            isInViewport: state.isInViewport,
+            isPausedByVisibility: state.isDocHidden || !state.isInViewport,
+            reducedMotion: state.reducedMotion,
+            lang: state.lang,
+            mobilePane: state.mobilePane,
+            elapsedMs: Math.round(state.elapsedMs),
+            revealedCounts: Object.assign({}, state.revealedCounts)
+          };
+        }
+      };
+
+      // Initialize
+      applyLanguage("en");
+      loadScene(0, { revealImmediately: state.reducedMotion });
+      syncClock();
+    })();
+  </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 SuperARIS — Your personal research agent with ARIS, powered by a team of agents.
 
-[简体中文](README_CN.md) · **v0.1.0 preview**
+[简体中文](README_CN.md) · **v0.1.0 preview** · [Interactive walkthrough](https://wanshuiyin.github.io/SuperARIS/)
 
 Discuss a research goal with your main agent. Let it organize engineering,
 writing and review, inspect the actual results, take over when you want, and
