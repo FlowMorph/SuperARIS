@@ -8,6 +8,7 @@ No user session is attached, modified, stopped, or deleted.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 from pathlib import Path
@@ -70,7 +71,9 @@ def main():
             raise RuntimeError("The no-model identity smoke requires Node from the runner")
         synthetic = root / "codex.js"
         synthetic.write_text("console.log('SUPERARIS_NO_MODEL_READY'); setInterval(()=>{},1000);", encoding="utf-8")
-        client.json("pane", "run", pane, command_line([node, str(synthetic)]))
+        encoded = base64.b64encode(command_line([node, str(synthetic)]).encode("utf-16-le")).decode("ascii")
+        evidence["synthetic_launch"] = client.run("pane", "run", pane,
+            "powershell.exe -NoProfile -EncodedCommand " + encoded)
         deadline = time.monotonic() + 20
         while True:
             info = client.json("pane", "process-info", "--pane", pane)["process_info"]
@@ -91,6 +94,11 @@ def main():
     except BaseException as exc:
         evidence["status"] = "failed"
         evidence["error"] = repr(exc)
+        if "pane" in locals():
+            try:
+                evidence["failure_pane"] = client.run("pane", "read", pane, "--source", "recent", "--lines", "30")
+            except Exception as diagnostic:
+                evidence["failure_pane_error"] = repr(diagnostic)
         raise
     finally:
         if server is not None:
