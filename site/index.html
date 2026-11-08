@@ -1581,7 +1581,7 @@
     button:focus-visible,a:focus-visible,select:focus-visible {outline:2px solid var(--periwinkle);outline-offset:3px}
   </style>
 </head>
-<body data-theme="dark">
+<body data-theme="warm">
 
   <!-- Top Bar -->
   <header class="topbar">
@@ -1599,8 +1599,8 @@
           <span>GitHub</span>
         </a>
         <div class="theme-switch" role="group" aria-label="Page theme">
-<button type="button" class="theme-btn active" id="themeDarkBtn" aria-pressed="true" data-i18n="theme_dark">Dark</button>
-<button type="button" class="theme-btn" id="themeWarmBtn" aria-pressed="false" data-i18n="theme_warm">Warm</button>
+<button type="button" class="theme-btn" id="themeDarkBtn" aria-pressed="false" data-i18n="theme_dark">Dark</button>
+<button type="button" class="theme-btn active" id="themeWarmBtn" aria-pressed="true" data-i18n="theme_warm">Warm</button>
 </div>
 <div class="lang-switch" role="group" aria-label="Language switch">
           <button type="button" class="lang-btn active" id="lang-en" data-lang="en">EN</button>
@@ -1646,7 +1646,7 @@
       <div class="director-controls">
         <span class="stage-caption-pill" id="stage-caption">Stage 1/6 · One-command setup</span>
         <label class="review-control" style="display:inline-flex;gap:5px;align-items:center;font-size:10px;color:var(--text-secondary)"><input type="checkbox" id="includeReview" checked><span data-i18n="review_toggle">Background review</span></label>
-<select class="speed-select" id="playbackSpeed" aria-label="Playback speed"><option value="1">1×</option><option value="1.5" selected>1.5×</option><option value="2">2×</option></select>
+<select class="speed-select" id="playbackSpeed" aria-label="Playback speed"><option value="1">1×</option><option value="1.5">1.5×</option><option value="2" selected>2×</option></select>
 <button type="button" class="ctrl-btn" id="play-pause-btn" aria-label="Pause or play">
           <span id="play-pause-icon">⏸</span>
           <span id="play-pause-label">Pause</span>
@@ -2586,7 +2586,7 @@
       const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
       const state = {
-        speed:1.5, theme:"dark", showReview:true,
+        speed:2, theme:"warm", showReview:true,
         lang: "en",
         sceneIndex: 0,
         isPlaying: !reducedMotionQuery.matches,
