@@ -40,6 +40,10 @@ SuperARIS tracks registered tasks, result files, and reports while the original 
 
 Human-controlled sessions receive notices; dedicated Codex sessions can use automatic follow-up. [Receiving results and continuing work →](docs/RESULTS_AND_MEMORY.md)
 
+[![SuperARIS proactive collaboration: team and MCP reports reach the receiver, the original main agent verifies results and continues authorized work, and project records support recovery (Chinese labels).](assets/proactive-mechanism-zh.png)](assets/proactive-mechanism-zh.png)
+
+*How the team, receiver, main agent and project records connect (Chinese labels). Click to view full size.*
+
 ## Long-term project memory
 
 Keep the project's goals, decisions, corrections, results, and next actions in its existing notes and research wiki. Agents update these records as the work progresses and read them back when resuming. The context stays with the project across days and sessions, in files you can inspect and edit.
