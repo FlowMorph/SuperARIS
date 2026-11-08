@@ -20,10 +20,14 @@ jobs:
           $wheel = (Get-ChildItem dist/*.whl).FullName
           python -m pip install --no-deps $wheel
       - name: Native process, pipe, runtime and resource contracts
-        run: python -m pytest -q --basetemp=windows-evidence/pytest tests/test_windows_platform.py tests/test_windows_runtime.py tests/test_workbench_tasks.py tests/test_workbench_client.py tests/test_workbench_context.py tests/test_installed_package.py
+        run: |
+          New-Item -ItemType Directory -Force windows-evidence | Out-Null
+          python -m pytest -q --basetemp=windows-evidence/pytest tests/test_windows_platform.py tests/test_windows_runtime.py tests/test_workbench_tasks.py tests/test_workbench_client.py tests/test_workbench_context.py tests/test_installed_package.py
       - name: Isolated installed consumer and pinned ARIS helper
+        if: ${{ !cancelled() }}
         run: python scripts/verify_install.py 'dist/*.whl'
       - name: Official Herdr Windows distribution
+        if: ${{ !cancelled() }}
         run: |
           $release = Invoke-RestMethod 'https://api.github.com/repos/herdrdev/herdr/releases/tags/v0.9.5'
           $asset = $release.assets | Where-Object name -eq 'herdr-windows-x86_64.zip'
@@ -32,6 +36,7 @@ jobs:
           $exe = (Get-ChildItem "$env:RUNNER_TEMP/herdr" -Recurse -Filter herdr.exe | Select-Object -First 1).FullName
           "HERDR_SMOKE_BIN=$exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Real Herdr, named pipe, ConPTY and no-model report
+        if: ${{ !cancelled() }}
         run: python scripts/windows_herdr_smoke.py --herdr-bin "$env:HERDR_SMOKE_BIN" --output windows-evidence/herdr-smoke.json
       - uses: actions/upload-artifact@v4
         if: always()

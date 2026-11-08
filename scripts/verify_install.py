@@ -59,7 +59,7 @@ def main():
             wizard_output = run("-c", "import builtins,sys; from importlib.metadata import entry_points; "
                 "sys.stdin.isatty=lambda:True; sys.stdout.isatty=lambda:True; "
                 "answers=iter(['2','q']); builtins.input=lambda prompt='':(print(prompt),next(answers))[1]; "
-                "entry_points(group='console_scripts',name='superaris')[0].load()()")
+                "next(iter(entry_points(group='console_scripts',name='superaris'))).load()()")
             assert "Project directory" in wizard_output
             sent_cancel = True
         else:

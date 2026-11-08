@@ -7,7 +7,7 @@ project state remains authoritative at its original paths.
 from pathlib import Path
 import os
 import re
-from .platform import WINDOWS, command_line
+from .platform import WINDOWS, command_line, powershell_literal
 import shutil
 
 from .dependencies import productcommand, resolve_aris_repo
@@ -250,7 +250,7 @@ def _navigation(project, role, harness, task, scopes, repo, run, skill_index, or
         "## Capabilities and tools\n\n"
         "Catalog entries describe possible tools, not verified accounts, MCP services, GPUs or reviewer availability. "
         "Check the selected skill's actual requirements and use the existing owner for unsupported execution. "
-        + ("For PowerShell helpers, set `$env:ARIS_REPO = '" + str(repo).replace("'", "''") + "'` and invoke Python helpers with `&` and the installed Python interpreter in that same shell. " if WINDOWS else "Set the packet's ARIS_REPO explicitly in the same helper invocation. ") + "Preserve original MCP routes, reviewer "
+        + ("For PowerShell helpers, set `$env:ARIS_REPO = " + powershell_literal(str(repo)) + "` and invoke Python helpers with `&` and the installed Python interpreter in that same shell. " if WINDOWS else "Set the packet's ARIS_REPO explicitly in the same helper invocation. ") + "Preserve original MCP routes, reviewer "
         "freshness, budgets, paused Goals and publication/merge permissions. Local files or submitted messages do not "
         "prove native loading, actual reading or permanent model memory. After compact/restart, re-read recovery, "
         "the current role packet and its required skills.\n",
@@ -426,7 +426,7 @@ def prepare_context(
         + (f"Shared references source: `{shared}`\n\n" if sources else "")
         + f"Parent-depth shared references source: `{parent_shared}` → `{run / 'shared-references'}`.\n\n"
         + f"Canonical dependency catalog: `{repo / 'tools/skill-groups.tsv'}`. Canonical helper root: `{repo / 'tools'}`. "
-        + (f"For PowerShell, set $env:ARIS_REPO to {str(repo)!r} before invoking the Python helper with & in that same shell. " if WINDOWS else f"Before each helper shell invocation, set ARIS_REPO={repo} explicitly in that same invocation. ")
+        + (f"For PowerShell, set `$env:ARIS_REPO = {powershell_literal(str(repo))}` before invoking the Python helper with & in that same shell. " if WINDOWS else f"Before each helper shell invocation, set ARIS_REPO={repo} explicitly in that same invocation. ")
         +
         "Do not assume a reused or adopted native process inherited a launcher environment. "
         "The main owner executes canonical tools through the original skill helper resolver. A role or file-only MCP author "

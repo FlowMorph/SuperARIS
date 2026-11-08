@@ -114,12 +114,29 @@ def test_command_line_preserves_native_arguments(tmp_path):
     assert json.loads(target.read_text(encoding="utf-8")) == arguments
 
 
-def test_real_receiver_lifetime_and_report_deduplication(tmp_path):
+def make_fake_executable(directory, source):
+    """Real argv-preserving executable; .cmd reparses multiline native args."""
+    if os.name == "nt":
+        from io import BytesIO
+        from zipfile import ZipFile
+        from pip._vendor.distlib.scripts import ScriptMaker
+        maker = ScriptMaker(None, str(directory))
+        archive = BytesIO()
+        with ZipFile(archive, "w") as bundle:
+            bundle.writestr("__main__.py", source.encode("utf-8"))
+        executable = directory / "fake herdr transport.exe"
+        executable.write_bytes(maker._get_launcher("t") + maker._get_shebang("utf-8") + archive.getvalue())
+    else:
+        executable = directory / "fake herdr transport"
+        executable.write_text(f"#!{sys.executable}\n" + source, encoding="utf-8")
+        executable.chmod(0o755)
+    return executable
+
+
+@pytest.fixture
+def native_receiver_project(tmp_path):
     from superaris import receiver
-    from tests.test_workbench_receiver import (
-        FAKE_TRANSPORT, ReceiverProject,
-        test_receiver_survives_launcher_exit_and_collects_late_report_once,
-    )
+    from tests.test_workbench_receiver import FAKE_TRANSPORT, ReceiverProject
     directory = tmp_path / "receiver 中文 with spaces"
     directory.mkdir()
     class SingleOwnerProject(ReceiverProject):
@@ -128,23 +145,45 @@ def test_real_receiver_lifetime_and_report_deduplication(tmp_path):
                 options = (*options, "--only-role", "main")
             return super().invoke(command, *options)
     fixture = SingleOwnerProject(directory)
-    if os.name == "nt":
-        script = directory / "fake transport.py"
-        script.write_text(FAKE_TRANSPORT, encoding="utf-8")
-        fixture.binary = directory / "fake herdr.cmd"
-        fixture.env["ARIS_TEST_PYTHON"] = sys.executable
-        fixture.env["ARIS_TEST_FAKE_SCRIPT"] = str(script)
-        fixture.binary.write_text('@"%ARIS_TEST_PYTHON%" "%ARIS_TEST_FAKE_SCRIPT%" %*\n', encoding="ascii")
+    fixture.binary = make_fake_executable(directory, FAKE_TRANSPORT)
     try:
-        test_receiver_survives_launcher_exit_and_collects_late_report_once(fixture, False)
-        reused = fixture.invoke("receiver", "--action", "start", "--herdr-bin", fixture.binary)
-        assert reused["action"] == "reused"
+        yield fixture
     finally:
         receiver.stop(fixture.project)
         deadline = time.monotonic() + 15
         while receiver.status(fixture.project)["managed_process_alive"] and time.monotonic() < deadline:
             time.sleep(.05)
         assert not receiver.status(fixture.project)["managed_process_alive"]
+
+
+def test_fake_executable_preserves_multiline_native_argv(native_receiver_project):
+    fixture = native_receiver_project
+    body = "First line 中文\nSecond line with spaces and 'quotes'\nThird line"
+    completed = subprocess.run([str(fixture.binary), "--session", "isolated-test", "notification", "show",
+                                "test title", "--body", body], env=fixture.env,
+                               capture_output=True, text=True, timeout=15)
+    assert completed.returncode == 0, completed.stderr
+    assert fixture.commands()[-1] == ["notification", "show", "test title", "--body", body]
+
+
+@pytest.mark.parametrize("attach", [False, True])
+def test_real_receiver_lifetime_and_report_deduplication(native_receiver_project, attach):
+    from tests.test_workbench_receiver import test_receiver_survives_launcher_exit_and_collects_late_report_once
+    fixture = native_receiver_project
+    test_receiver_survives_launcher_exit_and_collects_late_report_once(fixture, attach)
+    reused = fixture.invoke("receiver", "--action", "start", "--herdr-bin", fixture.binary)
+    assert reused["action"] == "reused"
+
+
+def test_real_receiver_explicit_stop_restart_and_single_child(native_receiver_project):
+    from tests.test_workbench_receiver import test_explicit_stop_stays_disabled_until_receiver_start_and_reuses_one_child
+    test_explicit_stop_stays_disabled_until_receiver_start_and_reuses_one_child(native_receiver_project)
+
+
+@pytest.mark.parametrize("change", ["binding-owner", "live-occupant", "server-loss"])
+def test_real_receiver_preserves_owner_identity_on_loss(native_receiver_project, change):
+    from tests.test_workbench_receiver import test_receiver_ends_on_original_owner_or_fake_server_loss_without_rebinding
+    test_receiver_ends_on_original_owner_or_fake_server_loss_without_rebinding(native_receiver_project, change)
 
 
 @pytest.fixture

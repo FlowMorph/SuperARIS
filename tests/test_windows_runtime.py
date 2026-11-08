@@ -151,3 +151,30 @@ def test_draft_revokes_automation_and_does_not_resend_when_cleared(portable_team
     again = start(project, fake)
     assert again.returncode == 0, again.stderr
     assert sum(c[:2] == ["agent", "prompt"] for c in state.read(fake["state"])["commands"]) == before
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows PowerShell 5.1 consumer")
+def test_actual_windows_powershell51_context_command_with_unicode_spaces_and_apostrophe(tmp_path):
+    from superaris.context import prepare_context
+    from superaris.dependencies import resolve_aris_repo
+    from superaris.platform import command_line
+    import shutil
+    project = tmp_path / "O'Brien 科研 project"
+    project.mkdir()
+    record = state.directory(project) / "launch.json"
+    bound = {"project": str(project), "roles": {"main": {"harness": "codex", "inputs": {
+        "task": "Keep the original assignment", "skills": [], "recovery": [], "write_scope": str(project)}}}}
+    state.write(record, bound)
+    prepared = prepare_context(project, "main", "codex", "Keep the original assignment", [], repo=resolve_aris_repo())
+    navigation = Path(prepared["navigation"]).read_text(encoding="utf-8")
+    assert "PowerShell" in navigation and "into Bash" in navigation
+    command = navigation.split("```powershell\n", 1)[1].split("\n```", 1)[0].replace("'SKILL_NAME'", "'research-lit'")
+    powershell = shutil.which("powershell.exe")
+    assert powershell, "Windows PowerShell 5.1 must be exercised"
+    before = record.read_bytes()
+    result = subprocess.run([powershell, "-NoProfile", "-NonInteractive", "-Command", command],
+                            capture_output=True, text=True, encoding="utf-8", timeout=30)
+    assert result.returncode == 0, result.stderr
+    loaded = json.loads(result.stdout)
+    assert "research-lit" in loaded["skill_index"]
+    assert Path(loaded["packet"]).is_file() and record.read_bytes() == before

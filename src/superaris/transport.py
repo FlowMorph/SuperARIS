@@ -63,8 +63,11 @@ class WindowsPipe:
                     raise c.WinError(c.get_last_error())
                 success = self.api.GetOverlappedResult(self.handle, c.byref(operation), c.byref(count), False)
                 error = c.get_last_error() if not success else 0
-            if not success and error not in (109, 232, 233, 234):
-                raise c.WinError(error)
+            if not success:
+                if not writing and error in (109, 232, 233):
+                    return buffer.raw[:count.value]  # disconnected read end => EOF
+                if writing or error != 234:  # ERROR_MORE_DATA is a read fragment
+                    raise c.WinError(error)
             return count.value if writing else buffer.raw[:count.value]
         finally:
             self.api.CloseHandle(event)

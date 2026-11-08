@@ -76,8 +76,12 @@ def detached_process_options() -> dict:
     return {"start_new_session": True}
 
 
+def powershell_literal(value: str) -> str:
+    return "'" + str(value).replace("'", "''") + "'"
+
+
 def command_line(argv: list[str]) -> str:
     """Human/agent executable command for the platform's documented shell."""
     if WINDOWS:
-        return "& " + " ".join("'" + str(arg).replace("'", "''") + "'" for arg in argv)
+        return "& " + " ".join(powershell_literal(arg) for arg in argv)
     return shlex.join(argv)
