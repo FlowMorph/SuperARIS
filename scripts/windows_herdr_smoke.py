@@ -89,6 +89,15 @@ def main():
         evidence["verified_synthetic_owner"] = live
         assert live["pid"]
         evidence["pane"] = client.request("pane.get", {"pane_id": pane})
+        stream = client.events([{"type": "pane.agent_status_changed", "pane_id": pane}], timeout=3)
+        try:
+            evidence["subscription_ack"] = next(stream)
+            client.request("pane.report_agent", {"pane_id": pane, "source": "custom:superaris-smoke",
+                "agent": "codex", "state": "idle", "message": "synthetic work complete; no model"})
+            evidence["native_event"] = next(stream)
+            assert pane in json.dumps(evidence["native_event"])
+        finally:
+            stream.close()
         evidence["snapshot"] = client.snapshot()
         evidence["status"] = "passed"
     except BaseException as exc:
