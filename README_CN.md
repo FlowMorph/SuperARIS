@@ -4,9 +4,7 @@
 
 **你的个人科研 Agent，基于 ARIS，由一支常驻 Agent 团队协作推进。**
 
-[![Homepage](https://img.shields.io/badge/Homepage-Live_demo-d9b98c?style=for-the-badge)](https://wanshuiyin.github.io/SuperARIS/) [![Built on ARIS](https://img.shields.io/badge/Built_on-ARIS-455299?style=for-the-badge)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite_ARIS-BibTeX-556b52?style=for-the-badge)](#cite-aris)
-
-[English](README.md) · **v0.1.0 预览版** · [安装](#安装与启动) · [使用文档](#使用文档) · [MIT](LICENSE)
+[![Homepage](https://img.shields.io/badge/Homepage-Live%20demo-0969da?style=flat)](https://wanshuiyin.github.io/SuperARIS/) [![安装](https://img.shields.io/badge/Install-Quick%20start-2da44e?style=flat)](#安装与启动) [![使用文档](https://img.shields.io/badge/Guides-Docs-0d9488?style=flat)](#使用文档) [![Preview v0.1.0](https://img.shields.io/badge/Preview-v0.1.0-6e7781?style=flat)](pyproject.toml) [![English](https://img.shields.io/badge/Language-English-8250df?style=flat)](README.md)<br>[![Built on ARIS](https://img.shields.io/badge/Built%20on-ARIS-455299?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite%20ARIS-BibTeX-556b52?style=flat)](#cite-aris) [![MIT License](https://img.shields.io/badge/License-MIT-555555?style=flat)](LICENSE) [![加入共享社区](https://img.shields.io/badge/Join%20Community-ARIS-07a65a?style=flat)](#community)
 
 [![看看团队怎样推进研究 — 中文动图预览](assets/demo-zh.gif)](https://wanshuiyin.github.io/SuperARIS/media/demo-zh.mp4)
 
@@ -107,6 +105,14 @@ SUPERARIS_ARIS_REPO=/path/to/aris superaris
 - [技能、上下文与恢复](docs/PROJECT_CONTEXT.md)
 - [主动跟进与项目记忆](docs/RESULTS_AND_MEMORY.md)
 - [ARIS 来源、依赖与更新](docs/DEPENDENCIES.md)
+
+<a id="community"></a>
+
+## 社区
+
+SuperARIS 与 [ARIS 科研社区](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/README_CN.md#community)共用同一个微信交流群，交流 Agent 协作与 AI 科研工作流。下方二维码直接引用 ARIS 上游维护的原图。
+
+<img src="https://raw.githubusercontent.com/wanshuiyin/Auto-claude-code-research-in-sleep/main/docs/wechat_group.jpg" alt="ARIS 共享科研交流群微信二维码" width="300">
 
 ## Cite ARIS
 
