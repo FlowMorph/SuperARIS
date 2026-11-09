@@ -2,7 +2,27 @@
 
 **SuperARIS — Your personal research agent with ARIS (Auto Research In Sleep, ~20k stars), powered by a team of agents.**
 
-[![Homepage](https://img.shields.io/badge/Homepage-Live%20demo-0969da?style=flat)](https://wanshuiyin.github.io/SuperARIS/) [![Install](https://img.shields.io/badge/Install-Quick%20start-2da44e?style=flat)](#install-and-open) [![Guides](https://img.shields.io/badge/Guides-Docs-0d9488?style=flat)](#guides) [![Preview v0.1.0](https://img.shields.io/badge/Preview-v0.1.0-6e7781?style=flat)](pyproject.toml) [![简体中文](https://img.shields.io/badge/Language-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-8250df?style=flat)](README_CN.md)<br>[![Built on ARIS](https://img.shields.io/badge/Built%20on-ARIS-455299?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite%20ARIS-BibTeX-556b52?style=flat)](#cite-aris) [![MIT License](https://img.shields.io/badge/License-MIT-555555?style=flat)](LICENSE) [![Join Community](https://img.shields.io/badge/Join%20Community-ARIS-07a65a?style=flat)](#community)
+[![Homepage](https://img.shields.io/badge/Homepage-Live%20demo-0969da?style=flat)](https://wanshuiyin.github.io/SuperARIS/) [![Install](https://img.shields.io/badge/Install-Quick%20start-2da44e?style=flat)](#quick-start) [![Guides](https://img.shields.io/badge/Guides-Docs-0d9488?style=flat)](#guides) [![Preview v0.1.0](https://img.shields.io/badge/Preview-v0.1.0-6e7781?style=flat)](pyproject.toml) [![简体中文](https://img.shields.io/badge/Language-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-8250df?style=flat)](README_CN.md)<br>[![Built on ARIS](https://img.shields.io/badge/Built%20on-ARIS-455299?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite%20ARIS-BibTeX-556b52?style=flat)](#cite-aris) [![MIT License](https://img.shields.io/badge/License-MIT-555555?style=flat)](LICENSE) [![Join Community](https://img.shields.io/badge/Join%20Community-ARIS-07a65a?style=flat)](#community)
+
+## Quick Start
+
+Have Python 3.10+, Git and [pipx](https://pipx.pypa.io/stable/installation/) ready, plus your chosen agent CLIs (`codex`, `claude`, `agy`) with model access configured. Install once, then open the wizard:
+
+```bash
+pipx install "git+https://github.com/wanshuiyin/SuperARIS.git"
+superaris
+```
+
+Choose your language, project, workbench, team and models. Existing Herdr or Orca installations are reused.
+
+For an explicit start, open a new project's directory and choose one workbench:
+
+| Workbench | Start in the current project | Setup guide |
+|---|---|---|
+| **Herdr (default)** | `superaris start . --host herdr` | [Workbench and startup](docs/WORKBENCH.md) · [Windows](docs/WINDOWS.md) |
+| **Orca (optional)** | `superaris start . --host orca` | [Orca setup](docs/ORCA.md) |
+
+For Orca, install and open the [official app](https://www.onorca.dev/) first; if its CLI is unavailable, register it in **Settings → General → Orca CLI**. Reopening an existing project keeps its recorded workbench and team. [More installation options ↓](#install-and-open)
 
 [![Research teamwork in action — English animated preview](assets/demo-en.gif)](https://wanshuiyin.github.io/SuperARIS/media/demo-en.mp4)
 
