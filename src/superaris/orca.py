@@ -72,7 +72,16 @@ class Orca:
         return status
 
     def ensure_startable(self, *, new: bool = False) -> dict:
-        status = self.status()
+        try:
+            status = self.status()
+        except OrcaError as exc:
+            if not new or exc.response.get("error", {}).get("code") != "runtime_unavailable":
+                raise
+            # A stopped, previously registered local runtime returns this
+            # native error rather than an offline status result. Open only
+            # for a confirmed new project, never to replace an old owner.
+            self.call("open", timeout=90)
+            return self.ensure_ready()
         if new and not status.get("runtime", {}).get("reachable"):
             # Only a confirmed new startup can open the installed application.
             # An existing binding never silently recreates its missing owner.

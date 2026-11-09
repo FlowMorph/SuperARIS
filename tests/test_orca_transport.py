@@ -118,3 +118,19 @@ def test_new_unverified_launch_pin_survives_timeout_and_rejects_replaced_pty(obs
     workspace['agents'] = [{'paneKey':'tab:leaf','agentType':'codex','hasLivePty':True,'state':'done'}]
     with pytest.raises(OrcaError,match='incarnation changed'):
         client.verify_owner(restored,project)
+
+
+@pytest.mark.parametrize('new,code,opens', [(True,'runtime_unavailable',True), (False,'runtime_unavailable',False), (True,'permission_denied',False)])
+def test_closed_runtime_native_error_only_opens_confirmed_new_project(observed,monkeypatch,new,code,opens):
+    _,client,_,_,_=observed
+    calls=[]
+    def unavailable():
+        raise OrcaError('actual native status error',{'ok':False,'error':{'code':code}})
+    monkeypatch.setattr(client,'status',unavailable)
+    monkeypatch.setattr(client,'call',lambda *a,**kw:calls.append(a) or {})
+    if opens:
+        assert client.ensure_startable(new=new)['runtime']['runtimeId']=='runtime-original'
+        assert calls==[('open',)]
+    else:
+        with pytest.raises(OrcaError):client.ensure_startable(new=new)
+        assert calls==[]
