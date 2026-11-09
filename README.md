@@ -117,6 +117,8 @@ The confirmed startup can install missing Herdr using its official Windows insta
 
 ## Guides
 
+- [[docs/USAGE|Optional local usage]]:`superaris usage PROJECT --by-role --json`
+
 - [Windows setup and support scope](docs/WINDOWS.md)
 - [Workbench, roles, and human handoff](docs/WORKBENCH.md)
 - [Skills, context, and recovery](docs/PROJECT_CONTEXT.md)

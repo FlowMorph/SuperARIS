@@ -126,6 +126,16 @@ def parser(prog: str = "superaris") -> argparse.ArgumentParser:
     context.add_argument("--skill", action="append", default=[])
     context.add_argument("--task", help="task for this preparation only; the current owner assignment remains unchanged")
     context.add_argument("--aris-repo", type=Path, help="canonical ARIS checkout for this preparation")
+    usage = sub.add_parser("usage", help="本地只读用量 / read-only local usage")
+    usage.add_argument("project", type=Path)
+    usage.add_argument("--by-role", action="store_true", help="按绑定角色展示 / group by bound role")
+    usage.add_argument("--json", action="store_true", help="结构化输出 / structured output")
+    usage.add_argument("--hours", type=float, default=24, help="回看小时数 / lookback hours (24)")
+    usage.add_argument("--since", help="带时区的起始ISO时间 / ISO start with timezone")
+    usage.add_argument("--until", help="带时区的结束ISO时间 / ISO end with timezone")
+    usage.add_argument("--claude-root", type=Path, help="Claude projects日志目录 / Claude projects log root")
+    usage.add_argument("--codex-root", type=Path, help="Codex sessions日志目录 / Codex sessions log root")
+    usage.add_argument("--lang", choices=["zh", "en"], help="输出语言 / output language")
     for command in ("listen", "reconcile", "watch", "report", "acknowledge", "remember", "control", "resolve-delivery", "receiver"):
         item = sub.add_parser(command)
         item.add_argument("project", type=Path)
@@ -240,6 +250,25 @@ def main(argv: list[str] | None = None, *, prog: str = "superaris") -> int:
             project = args.project.expanduser().resolve()
             if not project.is_dir():
                 raise ValueError("Selected project directory does not exist")
+            if args.command == "usage":
+                import math
+                from .usage import collect, render
+                from .usage_logs import timestamp
+                start, end = timestamp(args.since), timestamp(args.until)
+                if args.since is not None and start is None or args.until is not None and end is None:
+                    raise ValueError("时间必须为带时区的ISO格式 / timestamps require ISO format and timezone")
+                if not math.isfinite(args.hours) or args.hours <= 0:
+                    raise ValueError("hours须为正有限数 / hours must be positive and finite")
+                result = collect(project, claude_root=args.claude_root, codex_root=args.codex_root,
+                                 since=start, until=end, hours=args.hours)
+                if args.json:
+                    if not args.by_role:
+                        result.pop("roles")
+                    print(json.dumps(result, ensure_ascii=False, indent=2))
+                else:
+                    language = args.lang or result["ui_language"]
+                    print(render(result, by_role=args.by_role, lang=language))
+                return 0
             from . import tasks
             if args.command == "context":
                 result = prepare_role_context(project, args)

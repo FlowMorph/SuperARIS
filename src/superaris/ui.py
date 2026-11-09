@@ -3,6 +3,10 @@
 language = "zh"
 
 _EN = {
+    '未知': 'unknown',
+    '本地用量 / Usage': 'Local usage',
+    '范围内本地观测；缺失字段为未知。': 'Local observations in range; missing fields are unknown.',
+    '{label}：请求 {requests}，输入 {input}，缓存读 {read}，缓存写 {write}，输出 {output}，等效 {equivalent}，占比 {share}；状态 {status}': '{label}: requests {requests}, input {input}, cache read {read}, cache write {write}, output {output}, equivalent {equivalent}, share {share}; status {status}',
     "：": ": ",
     "主会话：统筹、恢复与验收": "Main: coordination, recovery and acceptance",
     "工程：实现与事实核查": "Engineering: implementation and fact checking",
