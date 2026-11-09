@@ -10,6 +10,8 @@
 
 *Animated preview · click to play the full video. Illustrative project and data.*
 
+**Orca Terminal demo:** [Interactive homepage](https://wanshuiyin.github.io/SuperARIS/?host=orca#workbench) · [English video](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-en.mp4) · [中文视频](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-zh.mp4).
+
 Discuss a research goal with your personal agent. It organizes a persistent team, delegates work, checks incoming results, and keeps track of what should happen next. Join any teammate's session to explore an idea, refine a draft, or take over.
 
 Built on [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) (Auto Research In Sleep, ~20k GitHub stars), SuperARIS equips each role with the research workflows and project context it needs. The team works within one project, with clear responsibilities and a record you can return to tomorrow.

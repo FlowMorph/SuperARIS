@@ -1,0 +1,2757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SuperARIS · Orca Terminal 交互演示</title>
+  <style>
+    :root {
+      --bg-page: #f4efe6;
+      --bg-bar: #ebe4d6;
+      --text-main: #1c1917;
+      --text-muted: #57534e;
+      --border-page: #d6cfc2;
+      --accent-amber: #b45309;
+      --accent-pill: #292524;
+      --accent-pill-text: #fafaf9;
+
+      /* Official Orca dark charcoal & raw terminal tokens */
+      --orca-window: #161618;
+      --orca-sidebar: #19191c;
+      --orca-tabbar: #151518;
+      --orca-tab-active: #1e2024;
+      --orca-terminal: #1e2024;
+      --orca-card: #24262b;
+      --orca-border: #2b2d33;
+      --orca-border-soft: rgba(255, 255, 255, 0.09);
+      --orca-text: #e4e4e7;
+      --orca-dim: #9ca3af;
+      --orca-faint: #6b7280;
+      --orca-green: #34d399;
+      --orca-diff-bg: #1d4d2b;
+      --orca-diff-text: #a7f3d0;
+      --orca-amber: #fbbf24;
+      --orca-coral: #e07a5f;
+      --orca-blue: #60a5fa;
+      --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", "Menlo", "Monaco", "Cascadia Mono", "Consolas", monospace;
+    }
+
+    body[data-theme="dark"] {
+      --bg-page: #0f1012;
+      --bg-bar: #17181c;
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --border-page: #27272a;
+      --accent-amber: #f59e0b;
+      --accent-pill: #f4f4f5;
+      --accent-pill-text: #18181b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      background: var(--bg-page);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .page-shell {
+      max-width: 1420px;
+      margin: 0 auto;
+      padding: 12px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Compact Top Bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      background: var(--bg-bar);
+      border: 1px solid var(--border-page);
+      border-radius: 10px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--accent-pill);
+      color: var(--accent-pill-text);
+    }
+
+    .demo-note {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      padding-left: 8px;
+      border-left: 2px solid var(--border-page);
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .ctrl-btn, .ctrl-select {
+      appearance: none;
+      border: 1px solid var(--border-page);
+      background: var(--bg-page);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      line-height: 1.2;
+    }
+
+    .ctrl-btn:hover, .ctrl-select:hover {
+      border-color: var(--text-muted);
+    }
+
+    .ctrl-btn.primary {
+      background: var(--accent-pill);
+      color: var(--accent-pill-text);
+      border-color: var(--accent-pill);
+    }
+
+    .seg-group {
+      display: inline-flex;
+      border: 1px solid var(--border-page);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--bg-page);
+    }
+
+    .seg-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+
+    .seg-btn.active {
+      background: var(--accent-pill);
+      color: var(--accent-pill-text);
+    }
+
+    /* Stage Step Bar & Caption */
+    .stage-deck {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-bar);
+      border: 1px solid var(--border-page);
+      border-radius: 10px;
+    }
+
+    .stage-steps {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .stage-btn {
+      position: relative;
+      border: 1px solid var(--border-page);
+      background: var(--bg-page);
+      color: var(--text-muted);
+      border-radius: 7px;
+      padding: 6px 8px 9px;
+      font-size: 12.5px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .stage-btn.active {
+      color: var(--text-main);
+      border-color: var(--accent-amber);
+      box-shadow: 0 0 0 1px var(--accent-amber) inset;
+    }
+
+    .stage-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: rgba(120, 113, 108, 0.16);
+      color: var(--text-main);
+      flex-shrink: 0;
+    }
+
+    .stage-btn.active .stage-num {
+      background: var(--accent-amber);
+      color: #fff;
+    }
+
+    .stage-progress {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 3px;
+      width: 0%;
+      background: var(--accent-amber);
+      transition: width 0.08s linear;
+    }
+
+    .caption-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stage-caption {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.4;
+    }
+
+    .handoff-pill {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(52, 211, 153, 0.16);
+      color: #047857;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      animation: pulseSlide 0.35s ease-out;
+    }
+
+    body[data-theme="dark"] .handoff-pill {
+      color: #6ee7b7;
+    }
+
+    .handoff-pill.visible {
+      display: inline-flex;
+    }
+
+    @keyframes pulseSlide {
+      from { opacity: 0; transform: translateX(-6px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Official Orca Workbench Window */
+    .orca-window {
+      background: var(--orca-window);
+      color: var(--orca-text);
+      border: 1px solid #2e3038;
+      border-radius: 12px;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .orca-main-area {
+      display: grid;
+      grid-template-columns: 232px minmax(0, 1fr);
+      min-height: 560px;
+    }
+
+    /* Left Sidebar (Official Orca Hierarchy) */
+    .orca-sidebar {
+      background: var(--orca-sidebar);
+      border-right: 1px solid var(--orca-border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px 10px 8px;
+      user-select: none;
+    }
+
+    .sb-top {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sb-window-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 4px 6px;
+    }
+
+    .traffic-lights {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .tl-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .tl-red { background: #ff5f56; }
+    .tl-yellow { background: #ffbd2e; }
+    .tl-green { background: #27c93f; }
+
+    .orca-wordmark {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f4f4f5;
+      letter-spacing: -0.01em;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .orca-glyph {
+      display: inline-block;
+      width: 14px;
+      height: 9px;
+      border-top: 2px solid #f4f4f5;
+      border-right: 2px solid #f4f4f5;
+      border-radius: 0 8px 0 6px;
+      transform: skewX(-18deg);
+    }
+
+    .sb-search {
+      background: #232327;
+      border: 1px solid #2e2e34;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12px;
+      color: var(--orca-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sb-nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px;
+      font-size: 12px;
+      color: var(--orca-dim);
+    }
+
+    .sb-section-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 4px 2px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--orca-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .sb-host-pill {
+      background: #222328;
+      border: 1px solid #2f3138;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #e4e4e7;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sb-host-count {
+      font-size: 11px;
+      padding: 0 6px;
+      border-radius: 99px;
+      background: #2f313a;
+      color: var(--orca-dim);
+    }
+
+    .sb-project-name {
+      padding: 4px 6px 2px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #f4f4f5;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sb-worktree-card {
+      background: #232429;
+      border: 1px solid #343640;
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .sb-wt-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #f4f4f5;
+    }
+
+    .sb-wt-tag {
+      font-size: 10.5px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #31333d;
+      color: #d4d4d8;
+    }
+
+    .sb-wt-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--orca-faint);
+      margin-bottom: 3px;
+    }
+
+    .sb-term-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 5px 6px;
+      border-radius: 5px;
+      font-size: 12px;
+      color: var(--orca-dim);
+      border: 1px solid transparent;
+    }
+
+    .sb-term-row.active-role {
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .sb-term-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sb-ring {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1.5px solid var(--orca-green);
+      flex-shrink: 0;
+    }
+
+    .sb-term-row.active-role .sb-ring {
+      background: var(--orca-amber);
+      border-color: var(--orca-amber);
+    }
+
+    .sb-term-badge {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--orca-faint);
+      flex-shrink: 0;
+    }
+
+    .sb-files-box {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid var(--orca-border);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sb-file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--orca-dim);
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .sb-file-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sb-file-stat {
+      flex-shrink: 0;
+    }
+
+    .sb-file-item.updated {
+      color: var(--orca-green);
+      background: rgba(52, 211, 153, 0.08);
+    }
+
+    .sb-bottom-chrome {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px solid var(--orca-border);
+      font-size: 12px;
+      color: var(--orca-faint);
+    }
+
+    /* Mobile Compact Project Header & Role Switcher (hidden on desktop) */
+    .mobile-orca-bar {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 10px;
+      background: var(--orca-sidebar);
+      border-bottom: 1px solid var(--orca-border);
+    }
+
+    .mobile-proj-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--orca-dim);
+      font-family: var(--font-mono);
+    }
+
+    .mobile-role-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .mobile-pane-btn {
+      border: 1px solid var(--orca-border);
+      background: #222328;
+      color: var(--orca-dim);
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .mobile-pane-btn.active {
+      background: var(--orca-tab-active);
+      color: #fff;
+      border-color: var(--orca-amber);
+    }
+
+    /* Right Terminal Workspace: 3 Simultaneous Terminal Tab Groups + Bottom Record Strip */
+    .orca-workspace-column {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--orca-window);
+    }
+
+    .terminals-stage {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.14fr 1fr 1fr;
+      background: var(--orca-border);
+      gap: 1px;
+      min-height: 490px;
+    }
+
+    /* Individual Raw Orca Terminal Surface */
+    .orca-term-pane {
+      background: var(--orca-terminal);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+
+    .orca-term-pane.pane-focused {
+      box-shadow: 0 2px 0 0 var(--orca-amber) inset;
+    }
+
+    .term-tabbar {
+      height: 34px;
+      background: var(--orca-tabbar);
+      border-bottom: 1px solid var(--orca-border);
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      padding-right: 8px;
+      user-select: none;
+    }
+
+    .term-tabs-left {
+      display: flex;
+      align-items: stretch;
+      min-width: 0;
+    }
+
+    .term-tab {
+      background: var(--orca-tab-active);
+      border-right: 1px solid var(--orca-border);
+      padding: 0 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #f4f4f5;
+      white-space: nowrap;
+    }
+
+    .term-tab-spark {
+      color: var(--orca-dim);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .term-tab-close {
+      color: var(--orca-faint);
+      font-size: 12px;
+      margin-left: 3px;
+    }
+
+    .term-tab-plus {
+      padding: 0 9px;
+      display: inline-flex;
+      align-items: center;
+      color: var(--orca-faint);
+      font-size: 14px;
+    }
+
+    .term-tab-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--orca-faint);
+      font-size: 11.5px;
+      font-family: var(--font-mono);
+    }
+
+    /* Raw Terminal Stream Body */
+    .term-stream {
+      flex: 1;
+      padding: 12px 13px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      line-height: 1.52;
+      color: var(--orca-text);
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    /* Native CLI Banner inside Terminal */
+    .cli-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+
+    .cli-mascot {
+      width: 28px;
+      height: 22px;
+      background: #252830;
+      border: 1px solid #383c47;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: #e4e4e7;
+    }
+
+    .cli-mascot::before {
+      content: ">_";
+    }
+
+    .cli-banner-meta {
+      font-size: 12px;
+      line-height: 1.38;
+    }
+
+    .cli-banner-title {
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .cli-banner-sub {
+      color: var(--orca-dim);
+    }
+
+    .t-logs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .t-entry {
+      word-break: break-word;
+    }
+
+    .t-history {
+      opacity: 0.68;
+    }
+
+    .history-divider {
+      font-size: 11px;
+      color: var(--orca-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      padding-bottom: 3px;
+      margin: 2px 0;
+    }
+
+    /* Prompt echoed line (> ...) */
+    .t-cmd {
+      color: #d4d4d8;
+      font-weight: 500;
+    }
+
+    .t-cmd .p-char {
+      color: var(--orca-dim);
+      margin-right: 7px;
+    }
+
+    /* Official Orca Terminal Tool Call: green dot + bold Tool(arg) + ⎿ subline */
+    .t-tool {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .t-tool-head {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .t-tool-dot {
+      color: var(--orca-green);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .t-tool-sub {
+      color: var(--orca-dim);
+      padding-left: 16px;
+      font-weight: 400;
+      font-size: 12.8px;
+    }
+
+    .t-info {
+      color: #f3f4f6;
+      padding-left: 2px;
+    }
+
+    .t-info::before {
+      content: "• ";
+      color: #f3f4f6;
+    }
+
+    /* Inline CLI Wizard inside Terminal (compact, never a web modal) */
+    .t-cli-wizard {
+      background: rgba(255, 255, 255, 0.035);
+      border-left: 2px solid var(--orca-green);
+      padding: 6px 10px;
+      border-radius: 0 6px 6px 0;
+      font-size: 12.5px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .t-cli-wizard-title {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .t-cli-wizard-row {
+      display: flex;
+      gap: 6px;
+      color: var(--orca-dim);
+    }
+
+    .t-cli-wizard-row .q-mark {
+      color: var(--orca-green);
+    }
+
+    .t-cli-wizard-row .ans-val {
+      color: #f4f4f5;
+      font-weight: 600;
+    }
+
+    /* File / Diff Result Block matching ORCA_OFFICIAL_TERMINAL.jpg */
+    .t-file-card {
+      background: #17191c;
+      border: 1px solid var(--orca-border);
+      border-radius: 6px;
+      padding: 7px 9px;
+      font-size: 12.5px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .t-file-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      color: #e4e4e7;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      padding-bottom: 3px;
+    }
+
+    .t-file-title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .t-file-path {
+      color: var(--orca-dim);
+      font-weight: 400;
+      font-size: 11.5px;
+      margin-left: 6px;
+    }
+
+    .t-muted {
+      color: var(--orca-faint);
+      font-weight: 400;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .t-diff-add {
+      background: var(--orca-diff-bg);
+      color: var(--orca-diff-text);
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    .t-diff-del {
+      background: rgba(153, 27, 27, 0.38);
+      color: #fca5a5;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    /* Raw Terminal Bottom Composer & Status Bar (from ORCA_OFFICIAL_TERMINAL.jpg) */
+    .term-footer-wrap {
+      margin-top: auto;
+      background: var(--orca-terminal);
+      font-family: var(--font-mono);
+    }
+
+    .term-effort-row {
+      display: flex;
+      justify-content: flex-end;
+      padding: 3px 12px;
+      font-size: 11.5px;
+      color: var(--orca-dim);
+    }
+
+    .term-prompt-box {
+      border-top: 1px solid var(--orca-border-soft);
+      border-bottom: 1px solid var(--orca-border-soft);
+      padding: 7px 12px;
+      min-height: 35px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13.5px;
+      color: #ffffff;
+    }
+
+    .prompt-chevron {
+      color: #e4e4e7;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .term-cursor {
+      display: inline-block;
+      width: 7px;
+      height: 15px;
+      background: var(--orca-amber);
+      vertical-align: text-bottom;
+      margin-left: 2px;
+      animation: blink 1s steps(2, start) infinite;
+    }
+
+    @keyframes blink {
+      to { visibility: hidden; }
+    }
+
+    .term-mode-line {
+      padding: 4px 12px 6px;
+      font-size: 11.5px;
+      color: var(--orca-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .term-mode-accent {
+      color: var(--orca-dim);
+      font-weight: 500;
+    }
+
+    .input-placeholder {
+      color: var(--orca-faint);
+    }
+
+    /* Background Fresh-Context MCP Reviewer Drawer (Beat 6) */
+    .mcp-drawer {
+      display: none;
+      background: #1b2230;
+      border-top: 1px solid #3b82f6;
+      padding: 9px 14px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      color: #dbeafe;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .mcp-drawer.visible {
+      display: flex;
+    }
+
+    .mcp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      color: #93c5fd;
+    }
+
+    /* Subtle Project Record Strip (CURRENT.md / MEMORY.md) */
+    .record-strip {
+      background: #17181c;
+      border-top: 1px solid var(--orca-border);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .record-label {
+      color: var(--orca-amber);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .record-entries {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex: 1;
+      color: var(--orca-text);
+    }
+
+    .record-chip {
+      background: #23252b;
+      border: 1px solid #32353e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11.5px;
+    }
+
+    /* Bottom Orca Status Footer */
+    .orca-statusbar {
+      height: 28px;
+      background: #121215;
+      border-top: 1px solid var(--orca-border);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--orca-dim);
+      user-select: none;
+    }
+
+    .status-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .status-dot-ok {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--orca-green);
+      margin-right: 4px;
+    }
+
+    /* Responsive Mobile / Tablet (<= 980px & 390px phone) */
+    @media (max-width: 980px) {
+      .page-shell {
+        padding: 6px 8px 14px;
+        gap: 6px;
+      }
+      .topbar {
+        padding: 6px 8px;
+        gap: 6px;
+      }
+      .stage-deck {
+        padding: 6px 8px;
+        gap: 5px;
+      }
+      .stage-steps {
+        display: flex;
+        overflow-x: auto;
+        gap: 5px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      .stage-steps::-webkit-scrollbar {
+        display: none;
+      }
+      .stage-btn {
+        flex: 0 0 auto;
+        padding: 4px 8px 7px;
+        font-size: 12px;
+      }
+      .stage-caption {
+        font-size: 13px;
+        line-height: 1.3;
+      }
+      .handoff-pill {
+        font-size: 11px;
+        padding: 2px 8px;
+      }
+      .orca-main-area {
+        grid-template-columns: 1fr;
+        min-height: 0;
+      }
+      .orca-sidebar {
+        display: none;
+      }
+      .mobile-orca-bar {
+        display: flex;
+        padding: 6px 8px;
+        gap: 5px;
+      }
+      .terminals-stage {
+        grid-template-columns: 1fr;
+        min-height: 360px;
+      }
+      .orca-term-pane {
+        display: none;
+      }
+      .orca-term-pane.mobile-active {
+        display: flex;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .demo-note {
+        font-size: 11.5px;
+        padding-left: 6px;
+      }
+      .ctrl-btn, .ctrl-select {
+        font-size: 11.5px;
+        padding: 4px 7px;
+      }
+      .seg-btn {
+        font-size: 11.5px;
+        padding: 4px 6px;
+      }
+      .term-stream {
+        font-size: 13.5px;
+        padding: 8px 10px;
+        gap: 6px;
+      }
+      .term-prompt-box {
+        font-size: 13.5px;
+        padding: 5px 10px;
+        min-height: 30px;
+      }
+      .orca-statusbar .hide-sm {
+        display: none;
+      }
+    }
+
+    html.embedded, html.embedded body { min-height:0; }
+    html.embedded .page-shell { max-width:none; padding:0; gap:10px; }
+    html.embedded .topbar { border:0; border-radius:0; padding:4px 0; background:transparent; }
+    html.embedded .topbar .brand-title, html.embedded .topbar .seg-group { display:none; }
+    html.embedded .orca-window { box-shadow:none; }
+  </style>
+</head>
+<body data-theme="warm">
+  <div class="page-shell">
+    <!-- Compact Header -->
+    <header class="topbar">
+      <div class="brand-group">
+        <div class="brand-title">
+          <span>SuperARIS</span>
+          <span class="brand-badge" data-i18n="header_badge">Orca 演示</span>
+        </div>
+        <span class="demo-note" data-i18n="demo_note">交互演示 · 示例项目与数据</span>
+      </div>
+
+      <div class="controls-group">
+        <button type="button" class="ctrl-btn primary" id="play-pause-btn">
+          <span id="play-pause-icon">⏸</span>
+          <span id="play-pause-label">暂停</span>
+        </button>
+        <button type="button" class="ctrl-btn" id="replay-btn">
+          <span>↺</span>
+          <span data-i18n="replay_label">重播</span>
+        </button>
+        <label class="ctrl-select" style="gap:4px;">
+          <span data-i18n="speed_label">速度</span>
+          <select id="playbackSpeed" aria-label="Playback speed" style="border:none;background:transparent;color:inherit;font:inherit;cursor:pointer;">
+            <option value="1">1×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2" selected>2×</option>
+          </select>
+        </label>
+        <div class="seg-group" role="group" aria-label="Theme">
+          <button type="button" class="seg-btn active" id="themeWarmBtn" aria-pressed="true" data-i18n="theme_warm">暖米</button>
+          <button type="button" class="seg-btn" id="themeDarkBtn" aria-pressed="false" data-i18n="theme_dark">深色</button>
+        </div>
+        <div class="seg-group" role="group" aria-label="Language">
+          <button type="button" class="seg-btn active" id="lang-zh">中文</button>
+          <button type="button" class="seg-btn" id="lang-en">EN</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 7-Beat Stage Bar & Caption -->
+    <section class="stage-deck" aria-label="Demo stages">
+      <div class="stage-steps" id="stage-steps" role="tablist"></div>
+      <div class="caption-row">
+        <div class="stage-caption" id="stage-caption"></div>
+        <div class="handoff-pill" id="handoff-pill"></div>
+      </div>
+    </section>
+
+    <!-- Official Orca Workbench Frame -->
+    <main class="orca-window" id="orca-workbench">
+      <!-- Mobile Compact Bar (<=980px) -->
+      <div class="mobile-orca-bar">
+        <div class="mobile-proj-meta">
+          <span>📁 ablation-notes · local</span>
+          <span id="mobile-stage-tag">step 1/7</span>
+        </div>
+        <div class="mobile-role-tabs">
+          <button type="button" class="mobile-pane-btn active" data-pane="main" id="mob-tab-main">主会话 · main</button>
+          <button type="button" class="mobile-pane-btn" data-pane="engineer" id="mob-tab-engineer">工程 · engineer</button>
+          <button type="button" class="mobile-pane-btn" data-pane="writer" id="mob-tab-writer">写作 · writer</button>
+        </div>
+      </div>
+
+      <div class="orca-main-area">
+        <!-- Official Orca Sidebar -->
+        <aside class="orca-sidebar" aria-label="Orca Sidebar">
+          <div class="sb-top">
+            <div class="sb-window-bar">
+              <div class="traffic-lights">
+                <span class="tl-dot tl-red"></span>
+                <span class="tl-dot tl-yellow"></span>
+                <span class="tl-dot tl-green"></span>
+              </div>
+              <span class="orca-wordmark"><span class="orca-glyph"></span>Orca</span>
+              <span style="color:var(--orca-faint);font-size:12px;">◧</span>
+            </div>
+
+            <div class="sb-search">
+              <span>⌕</span>
+              <span data-i18n="sb_search">搜索终端与工作区</span>
+            </div>
+
+            <div class="sb-nav-row">
+              <span>☰ <span data-i18n="sb_surface">Terminal 终端</span></span>
+              <span style="font-family:var(--font-mono);font-size:11px;">local</span>
+            </div>
+
+            <div class="sb-section-hdr">
+              <span data-i18n="sb_projects">项目列表</span>
+              <span>＋</span>
+            </div>
+
+            <div class="sb-host-pill">
+              <span>🖥 Local Mac</span>
+              <span class="sb-host-count">1</span>
+            </div>
+
+            <div class="sb-project-name">
+              <span>📂</span>
+              <span>ablation-notes</span>
+            </div>
+
+            <div class="sb-worktree-card">
+              <div class="sb-wt-head">
+                <span>ablation-notes</span>
+                <span class="sb-wt-tag">primary</span>
+              </div>
+              <div class="sb-wt-sub">~/ablation-notes · local</div>
+
+              <div class="sb-term-row active-role" id="sidebar-agent-main">
+                <div class="sb-term-left">
+                  <span class="sb-ring"></span>
+                  <span>&gt;_ main · Codex</span>
+                </div>
+                <span class="sb-term-badge" id="badge-main">idle</span>
+              </div>
+
+              <div class="sb-term-row" id="sidebar-agent-eng">
+                <div class="sb-term-left">
+                  <span class="sb-ring"></span>
+                  <span>&gt;_ engineer · Codex</span>
+                </div>
+                <span class="sb-term-badge" id="badge-eng">waiting</span>
+              </div>
+
+              <div class="sb-term-row" id="sidebar-agent-writer">
+                <div class="sb-term-left">
+                  <span class="sb-ring"></span>
+                  <span>&gt;_ writer · Codex</span>
+                </div>
+                <span class="sb-term-badge" id="badge-writer">waiting</span>
+              </div>
+
+              <div class="sb-files-box">
+                <div class="sb-section-hdr" style="padding:2px 0;">
+                  <span data-i18n="sb_artifacts">项目真实文件</span>
+                </div>
+                <div class="sb-file-item" id="file-plan" title="CURRENT.md">
+                  <span class="sb-file-name">CURRENT.md</span>
+                  <span class="sb-file-stat" id="file-plan-stat">ready</span>
+                </div>
+                <div class="sb-file-item" id="file-exp" title="outputs/engineer/report.json">
+                  <span class="sb-file-name">report.json</span>
+                  <span class="sb-file-stat" id="file-exp-stat">—</span>
+                </div>
+                <div class="sb-file-item" id="file-audit" title="VERIFY_LOG.txt">
+                  <span class="sb-file-name">VERIFY_LOG.txt</span>
+                  <span class="sb-file-stat" id="file-audit-stat">—</span>
+                </div>
+                <div class="sb-file-item" id="file-tex" title="outputs/writer/results.tex">
+                  <span class="sb-file-name">results.tex</span>
+                  <span class="sb-file-stat" id="file-tex-stat">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sb-bottom-chrome">
+            <span>⚙ &nbsp; ?</span>
+            <span id="window-stage-badge">orca · local</span>
+          </div>
+        </aside>
+
+        <!-- Right Column: 3 Simultaneous Native Terminal Surfaces + Record Strip -->
+        <div class="orca-workspace-column">
+          <div class="terminals-stage">
+            <!-- Terminal 1: main (Codex) -->
+            <section class="orca-term-pane pane-focused mobile-active" id="pane-main" aria-label="Main Terminal">
+              <div class="term-tabbar">
+                <div class="term-tabs-left">
+                  <div class="term-tab">
+                    <span class="term-tab-spark">&gt;_</span>
+                    <span id="tab-title-main">main · Codex</span>
+                    <span class="term-tab-close">×</span>
+                  </div>
+                  <span class="term-tab-plus">＋</span>
+                </div>
+                <div class="term-tab-actions">
+                  <span>owner</span>
+                  <span>◫</span>
+                </div>
+              </div>
+
+              <div class="term-stream" id="stream-main">
+                <div class="cli-banner">
+                  <div class="cli-mascot"></div>
+                  <div class="cli-banner-meta">
+                    <div class="cli-banner-title">Codex <span style="font-weight:400;color:var(--orca-dim);">· configured model</span></div>
+                    <div class="cli-banner-sub">~/ablation-notes · role: main (owner)</div>
+                  </div>
+                </div>
+                <div class="t-logs" id="logs-main"></div>
+              </div>
+
+              <div class="term-footer-wrap">
+                <div class="term-effort-row">
+                  <span>ARIS · project-agent</span>
+                </div>
+                <div class="term-prompt-box">
+                  <span class="prompt-chevron">›</span>
+                  <span id="input-main"></span><span class="term-cursor" id="cursor-main"></span>
+                </div>
+                <div class="term-mode-line">
+                  <span class="term-mode-accent">role: main · owner &amp; acceptance</span>
+                  <span id="foot-state-main">ready</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Terminal 2: engineer (Codex) -->
+            <section class="orca-term-pane" id="pane-engineer" aria-label="Engineer Terminal">
+              <div class="term-tabbar">
+                <div class="term-tabs-left">
+                  <div class="term-tab">
+                    <span class="term-tab-spark">&gt;_</span>
+                    <span id="tab-title-eng">engineer · Codex</span>
+                    <span class="term-tab-close">×</span>
+                  </div>
+                  <span class="term-tab-plus">＋</span>
+                </div>
+                <div class="term-tab-actions">
+                  <span>check</span>
+                  <span>◫</span>
+                </div>
+              </div>
+
+              <div class="term-stream" id="stream-engineer">
+                <div class="cli-banner">
+                  <div class="cli-mascot"></div>
+                  <div class="cli-banner-meta">
+                    <div class="cli-banner-title">Codex <span style="font-weight:400;color:var(--orca-dim);">· configured model</span></div>
+                    <div class="cli-banner-sub">~/ablation-notes · scope: outputs/engineer</div>
+                  </div>
+                </div>
+                <div class="t-logs" id="logs-engineer"></div>
+              </div>
+
+              <div class="term-footer-wrap">
+                <div class="term-effort-row">
+                  <span>ARIS · analyze-results</span>
+                </div>
+                <div class="term-prompt-box">
+                  <span class="prompt-chevron">›</span>
+                  <span id="input-engineer"></span><span class="term-cursor" id="cursor-engineer" style="display:none;"></span>
+                </div>
+                <div class="term-mode-line">
+                  <span class="term-mode-accent">scope: outputs/engineer</span>
+                  <span id="foot-state-eng">waiting</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Terminal 3: writer (Codex) -->
+            <section class="orca-term-pane" id="pane-writer" aria-label="Writer Terminal">
+              <div class="term-tabbar">
+                <div class="term-tabs-left">
+                  <div class="term-tab">
+                    <span class="term-tab-spark">&gt;_</span>
+                    <span id="tab-title-writer">writer · Codex</span>
+                    <span class="term-tab-close">×</span>
+                  </div>
+                  <span class="term-tab-plus">＋</span>
+                </div>
+                <div class="term-tab-actions">
+                  <span>prose</span>
+                  <span>◫</span>
+                </div>
+              </div>
+
+              <div class="term-stream" id="stream-writer">
+                <div class="cli-banner">
+                  <div class="cli-mascot"></div>
+                  <div class="cli-banner-meta">
+                    <div class="cli-banner-title">Codex <span style="font-weight:400;color:var(--orca-dim);">· configured model</span></div>
+                    <div class="cli-banner-sub">~/ablation-notes · scope: outputs/writer</div>
+                  </div>
+                </div>
+                <div class="t-logs" id="logs-writer"></div>
+              </div>
+
+              <div class="term-footer-wrap">
+                <div class="term-effort-row">
+                  <span>ARIS · paper-write</span>
+                </div>
+                <div class="term-prompt-box">
+                  <span class="prompt-chevron">›</span>
+                  <span id="input-writer"></span><span class="term-cursor" id="cursor-writer" style="display:none;"></span>
+                </div>
+                <div class="term-mode-line">
+                  <span class="term-mode-accent">scope: outputs/writer</span>
+                  <span id="foot-state-writer">waiting</span>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Background Fresh-Context MCP Review Drawer (Shown in Beat 6) -->
+          <div class="mcp-drawer" id="mcp-drawer">
+            <div class="mcp-badge">
+              <span>⚡</span>
+              <span id="mcp-title">独立 Fresh-Context 审阅（后台 MCP 调用，非第四常驻窗格）</span>
+            </div>
+            <div id="mcp-body">审阅意见：将「观测均值差（A=6.0, B=7.0, Δ=+1.0）」与「统计显著性」分开表述；6 条记录（每组 3 条）不宣称显著性。</div>
+          </div>
+
+          <!-- Subtle Project Record Strip (CURRENT.md / MEMORY.md) -->
+          <div class="record-strip">
+            <span class="record-label" data-i18n="record_label">项目记录 CURRENT.md · MEMORY.md</span>
+            <div class="record-entries" id="project-record"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Official Orca Bottom Status Bar -->
+      <footer class="orca-statusbar">
+        <div class="status-group">
+          <span><span class="status-dot-ok"></span>Orca local · ablation-notes</span>
+          <span class="hide-sm" id="receiver-status-text">project receiver: active</span>
+        </div>
+        <div class="status-group">
+          <span class="hide-sm" data-i18n="preset_note">可选组合：仅 Codex / CC+Codex / CC+Codex+AGY</span>
+          <span>&gt;_ 3 Codex terminals · 1 local host</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const I18N = {
+        zh: {
+          header_badge: "Orca 演示",
+          demo_note: "交互演示 · 示例项目与数据",
+          replay_label: "重播",
+          speed_label: "速度",
+          theme_warm: "暖米",
+          theme_dark: "深色",
+          sb_search: "搜索终端与工作区",
+          sb_surface: "Terminal 终端",
+          sb_projects: "项目列表",
+          sb_artifacts: "项目真实文件",
+          record_label: "项目记录 CURRENT.md",
+          preset_note: "可选组合：仅 Codex / CC+Codex / CC+Codex+AGY",
+          history_label: "本轮已执行",
+          mob_main: "主会话 · main",
+          mob_eng: "工程 · engineer",
+          mob_writer: "写作 · writer",
+          mcp_title: "独立 Fresh-Context 审阅（后台 MCP 调用，非第四常驻窗格）",
+          mcp_body: "审阅意见：将「观测均值差（A=6.0, B=7.0, Δ=+1.0）」与「统计显著性」分开表述；6 条记录（每组 3 条）不宣称显著性。"
+        },
+        en: {
+          header_badge: "Orca Demo",
+          demo_note: "Interactive demo · sample project & data",
+          replay_label: "Replay",
+          speed_label: "Speed",
+          theme_warm: "Warm",
+          theme_dark: "Dark",
+          sb_search: "Search terminals & worktrees",
+          sb_surface: "Terminal Surfaces",
+          sb_projects: "Projects",
+          sb_artifacts: "Project Artifacts",
+          record_label: "Project Record CURRENT.md",
+          preset_note: "Presets: Codex-only / CC+Codex / CC+Codex+AGY",
+          history_label: "Completed in session",
+          mob_main: "Main · owner",
+          mob_eng: "Engineer · check",
+          mob_writer: "Writer · prose",
+          mcp_title: "Fresh-Context Review (Background MCP call, not a 4th resident pane)",
+          mcp_body: "Review note: Separate observed mean shift (A=6.0, B=7.0, Δ=+1.0) from statistical significance on 6 records (3 per group)."
+        }
+      };
+
+      const SCENES = [
+        {
+          id: "launch",
+          num: "1",
+          label: { zh: "启动", en: "Launch" },
+          caption: {
+            zh: "1. 在终端运行 superaris，选择 ablation-notes 与 Orca，启动三个 Codex Terminal 会话",
+            en: "1. Run superaris in terminal, select ablation-notes & Orca, and start three Codex Terminal sessions"
+          },
+          focusedPane: "main",
+          handoff: null,
+          mcpVisible: false,
+          badges: { main: "starting", eng: "starting", writer: "starting" },
+          files: { plan: "ready", exp: "—", audit: "—", tex: "—" },
+          inputs: {
+            main: "superaris",
+            engineer: "",
+            writer: ""
+          },
+          panes: {
+            main: {
+              history: [],
+              steps: [
+                {
+                  at: 180,
+                  type: "cmd",
+                  text: { zh: "superaris", en: "superaris" }
+                },
+                {
+                  at: 520,
+                  type: "wizard",
+                  title: { zh: "SuperARIS 启动向导 · Orca 本地终端", en: "SuperARIS Wizard · Orca Local Terminals" },
+                  rows: {
+                    zh: [
+                      ["项目目录", "~/ablation-notes (id:wt_ablation)"],
+                      ["工作台宿主", "Orca（复用已安装 CLI 与本地 runtime）"],
+                      ["客户端组合", "仅 Codex（三角色 · 另支持 CC/AGY 组合）"],
+                      ["会话方式", "启动 3 个原生 Terminal 会话 + 项目 receiver"]
+                    ],
+                    en: [
+                      ["Project", "~/ablation-notes (id:wt_ablation)"],
+                      ["Workbench", "Orca (installed CLI & local runtime)"],
+                      ["Team Preset", "Codex-only (3 roles · CC/AGY presets also available)"],
+                      ["Sessions", "3 native Terminal sessions + project receiver"]
+                    ]
+                  }
+                },
+                {
+                  at: 1150,
+                  type: "tool",
+                  name: "Bash(orca agent launch --surface terminal --agent codex)",
+                  sub: {
+                    zh: "已启动 main、engineer、writer 三个独立 Terminal 会话与项目 receiver",
+                    en: "Started main, engineer, and writer Terminal sessions with project receiver"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [],
+              steps: [
+                {
+                  at: 850,
+                  type: "tool",
+                  name: "Read(.aris/workbench/context/engineer/role.md)",
+                  sub: {
+                    zh: "已绑定独占写域 outputs/engineer · 等待 main 派工",
+                    en: "Bound exclusive write_scope outputs/engineer · waiting for main"
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [],
+              steps: [
+                {
+                  at: 980,
+                  type: "tool",
+                  name: "Read(.aris/workbench/context/writer/role.md)",
+                  sub: {
+                    zh: "已绑定独占写域 outputs/writer · 等待 main 验收后派工",
+                    en: "Bound exclusive write_scope outputs/writer · waiting for verified facts"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "goal",
+          num: "2",
+          label: { zh: "目标与恢复", en: "Goal & Restore" },
+          caption: {
+            zh: "2. 主 Agent 读取项目记录与 6 条消融数据（A、B 各 3 条），明确先核实再写作",
+            en: "2. Main Agent reads project records & 6 ablation rows (3 per group, A & B): verify first, then write"
+          },
+          focusedPane: "main",
+          handoff: null,
+          mcpVisible: false,
+          badges: { main: "working", eng: "idle", writer: "idle" },
+          files: { plan: "read", exp: "—", audit: "—", tex: "—" },
+          inputs: {
+            main: "复核这份消融结果，整理成论文结果段；先验证，再写作。",
+            engineer: "",
+            writer: ""
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "cmd", text: { zh: "superaris", en: "superaris" } }
+              ],
+              steps: [
+                {
+                  at: 160,
+                  type: "cmd",
+                  text: {
+                    zh: "复核这份消融结果，整理成论文结果段；先验证，再写作。",
+                    en: "Verify this ablation table and draft the paper results paragraph; verify before writing."
+                  }
+                },
+                {
+                  at: 520,
+                  type: "tool",
+                  name: "Read(skills/project-agent/SKILL.md & CURRENT.md)",
+                  sub: {
+                    zh: "加载项目角色与唯一验收规则 · 读取 observations.csv（6 条记录，A/B 各 3 条）",
+                    en: "Loaded project-agent rules · inspected observations.csv (6 records, 3 per group)"
+                  }
+                },
+                {
+                  at: 1050,
+                  type: "file",
+                  head: "observations.csv",
+                  meta: "6 records · 3 per group",
+                  body: {
+                    zh: "row,group,score\n1,A,5  |  2,A,6  |  3,A,7\n4,B,6  |  5,B,7  |  6,B,8",
+                    en: "row,group,score\n1,A,5  |  2,A,6  |  3,A,7\n4,B,6  |  5,B,7  |  6,B,8"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [],
+              steps: [
+                {
+                  at: 640,
+                  type: "info",
+                  text: {
+                    zh: "已加载 ARIS 导航快照，保持 idle 等待 main 注册工单。",
+                    en: "ARIS navigation loaded; idle awaiting main watch registration."
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [],
+              steps: [
+                {
+                  at: 740,
+                  type: "info",
+                  text: {
+                    zh: "已加载 ARIS 导航快照，在 main 完成独立核查前不提前动笔。",
+                    en: "ARIS navigation loaded; holding prose until main verifies evidence."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "delegate",
+          num: "3",
+          label: { zh: "分工", en: "Delegate" },
+          caption: {
+            zh: "3. 主 Agent 将数据核查派给工程角色（独占 outputs/engineer），工程加载 analyze-results 核算",
+            en: "3. Main Agent delegates data verification to Engineer (outputs/engineer); Engineer runs analyze-results"
+          },
+          focusedPane: "engineer",
+          handoff: {
+            zh: "主会话 → 工程 · 派发 observations.csv 核算任务",
+            en: "main → engineer · delegate observations.csv check"
+          },
+          mcpVisible: false,
+          badges: { main: "watching", eng: "working", writer: "idle" },
+          files: { plan: "updated", exp: "pending", audit: "—", tex: "—" },
+          inputs: {
+            main: "",
+            engineer: "读取 context/engineer/0002/packet.md，用 analyze-results 核算 observations.csv 并写入 outputs/engineer/",
+            writer: ""
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "cmd", text: { zh: "复核这份消融结果，整理成论文结果段；先验证，再写作。", en: "Verify this ablation table and draft the paper results paragraph; verify before writing." } }
+              ],
+              steps: [
+                {
+                  at: 120,
+                  type: "tool",
+                  name: "Bash(superaris watch . --id eng-check --worker-role engineer)",
+                  sub: {
+                    zh: "等待产物 outputs/engineer/report.json 与 FACTS.md · 主会话保持最终验收权",
+                    en: "Watching outputs/engineer/report.json & FACTS.md · main retains acceptance gate"
+                  }
+                },
+                {
+                  at: 460,
+                  type: "tool",
+                  name: "Bash(orca terminal send --terminal engineer --enter)",
+                  sub: {
+                    zh: "已投递至 engineer 终端 · 独占写域 outputs/engineer",
+                    en: "Delivered to engineer terminal · exclusive scope outputs/engineer"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [],
+              steps: [
+                {
+                  at: 200,
+                  type: "cmd",
+                  text: {
+                    zh: "读取 context/engineer/0002/packet.md，用 analyze-results 核算 observations.csv 并写入 outputs/engineer/",
+                    en: "Read context/engineer/0002/packet.md, run analyze-results on observations.csv into outputs/engineer/"
+                  }
+                },
+                {
+                  at: 620,
+                  type: "tool",
+                  name: "Read(skills/analyze-results/SKILL.md & observations.csv)",
+                  sub: {
+                    zh: "在同一个 engineer 终端内直接加载技能，不为单个技能另开新 agent",
+                    en: "Loaded skill directly inside engineer terminal without spawning another agent"
+                  }
+                },
+                {
+                  at: 1080,
+                  type: "tool",
+                  name: "Bash(python3 -c \"import csv...\" > outputs/engineer/report.json)",
+                  sub: {
+                    zh: "计算完成：A 均值 6.0 (18/3)，B 均值 7.0 (21/3)，差值 Δ = +1.0",
+                    en: "Computed: A mean 6.0 (18/3), B mean 7.0 (21/3), delta Δ = +1.0"
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [],
+              steps: [
+                {
+                  at: 700,
+                  type: "info",
+                  text: {
+                    zh: "独占写域 outputs/writer 保持待命。",
+                    en: "Exclusive scope outputs/writer standing by."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "verify",
+          num: "4",
+          label: { zh: "交付与核对", en: "Verify & Accept" },
+          caption: {
+            zh: "4. 工程结果回来了，主 Agent 独立复算核对后写入 VERIFY_LOG.txt 并签收",
+            en: "4. Engineering results return; Main Agent independently recomputes, writes VERIFY_LOG.txt, and accepts"
+          },
+          focusedPane: "main",
+          handoff: {
+            zh: "工程 → 主会话 · 交付 report.json 与 FACTS.md",
+            en: "engineer → main · deliver report.json & FACTS.md"
+          },
+          mcpVisible: false,
+          badges: { main: "verifying", eng: "done", writer: "idle" },
+          files: { plan: "updated", exp: "verified", audit: "verified", tex: "—" },
+          inputs: {
+            main: "收到 eng-check 回执：独立重算 observations.csv 核对 outputs/engineer/report.json 并写入 VERIFY_LOG.txt",
+            engineer: "",
+            writer: ""
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "tool", name: "Bash(superaris watch . --id eng-check --worker-role engineer)", sub: { zh: "registered handle eng-check", en: "registered handle eng-check" } }
+              ],
+              steps: [
+                {
+                  at: 180,
+                  type: "cmd",
+                  text: {
+                    zh: "收到 eng-check 回执：独立重算 observations.csv 核对 outputs/engineer/report.json 并写入 VERIFY_LOG.txt",
+                    en: "Handle eng-check reported: independently recompute observations.csv vs report.json & write VERIFY_LOG.txt"
+                  }
+                },
+                {
+                  at: 560,
+                  type: "tool",
+                  name: "Bash(python3 verify_ablation.py && superaris acknowledge . --id eng-check --evidence VERIFY_LOG.txt)",
+                  sub: {
+                    zh: "独立验算通过（状态回执本身不等于验收）· 已关闭 eng-check 等待",
+                    en: "Independent check passed (status alone ≠ acceptance) · acknowledged eng-check"
+                  }
+                },
+                {
+                  at: 1020,
+                  type: "file",
+                  head: "VERIFY_LOG.txt",
+                  meta: "accepted · independent check",
+                  body: {
+                    zh: "+ A: sum=18, n=3, mean=6.0 (matches report.json)\n+ B: sum=21, n=3, mean=7.0 (matches report.json)\n+ delta_B_minus_A = +1.0 | VERDICT: PASS",
+                    en: "+ A: sum=18, n=3, mean=6.0 (matches report.json)\n+ B: sum=21, n=3, mean=7.0 (matches report.json)\n+ delta_B_minus_A = +1.0 | VERDICT: PASS"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [
+                { type: "tool", name: "Bash(python3 -c \"import csv...\" > outputs/engineer/report.json)", sub: { zh: "A=6.0, B=7.0, Δ=+1.0", en: "A=6.0, B=7.0, Δ=+1.0" } }
+              ],
+              steps: [
+                {
+                  at: 120,
+                  type: "file",
+                  head: "outputs/engineer/report.json",
+                  meta: "FACTS.md paired",
+                  body: {
+                    zh: "+ {\"A\": {\"sum\": 18, \"n\": 3, \"mean\": 6.0},\n+  \"B\": {\"sum\": 21, \"n\": 3, \"mean\": 7.0},\n+  \"delta\": 1.0}",
+                    en: "+ {\"A\": {\"sum\": 18, \"n\": 3, \"mean\": 6.0},\n+  \"B\": {\"sum\": 21, \"n\": 3, \"mean\": 7.0},\n+  \"delta\": 1.0}"
+                  }
+                },
+                {
+                  at: 340,
+                  type: "tool",
+                  name: "Bash(superaris report . --id eng-check --outcome completed)",
+                  sub: {
+                    zh: "已向项目 receiver 提交完成信号，等待 main 独立核查",
+                    en: "Reported completed signal to project receiver; awaiting main verification"
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [],
+              steps: [
+                {
+                  at: 920,
+                  type: "info",
+                  text: {
+                    zh: "检测到 VERIFY_LOG.txt 已签收，准备接收写作派工。",
+                    en: "VERIFY_LOG.txt verified by main; ready for writing assignment."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "write",
+          num: "5",
+          label: { zh: "写作", en: "Draft Prose" },
+          caption: {
+            zh: "5. 主 Agent 将已验证事实交给写作角色，加载 paper-write 撰写两行论文结果段",
+            en: "5. Main Agent hands verified facts to Writer; Writer loads paper-write to draft the two-line paragraph"
+          },
+          focusedPane: "writer",
+          handoff: {
+            zh: "主会话 → 写作 · 移交已核实的 VERIFY_LOG.txt 与 FACTS.md",
+            en: "main → writer · hand off verified VERIFY_LOG.txt & FACTS.md"
+          },
+          mcpVisible: false,
+          badges: { main: "watching", eng: "idle", writer: "working" },
+          files: { plan: "updated", exp: "verified", audit: "verified", tex: "updated" },
+          inputs: {
+            main: "",
+            engineer: "",
+            writer: "基于已验收的 VERIFY_LOG.txt 与 FACTS.md，用 paper-write 撰写 outputs/writer/results.tex 两行结果段"
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "tool", name: "Bash(superaris acknowledge . --id eng-check --evidence VERIFY_LOG.txt)", sub: { zh: "eng-check 已签收", en: "eng-check acknowledged" } }
+              ],
+              steps: [
+                {
+                  at: 140,
+                  type: "tool",
+                  name: "Bash(superaris watch . --id writer-round1 --worker-role writer --deliverable outputs/writer/results.tex)",
+                  sub: {
+                    zh: "已向现有 writer 终端派发写作任务（独占 outputs/writer）",
+                    en: "Dispatched writing task to existing writer terminal (outputs/writer)"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [
+                { type: "tool", name: "Bash(superaris report . --id eng-check --outcome completed)", sub: { zh: "report.json 已通过主会话核对", en: "report.json verified by main" } }
+              ],
+              steps: []
+            },
+            writer: {
+              history: [],
+              steps: [
+                {
+                  at: 180,
+                  type: "cmd",
+                  text: {
+                    zh: "基于已验收的 VERIFY_LOG.txt 与 FACTS.md，用 paper-write 撰写 outputs/writer/results.tex 两行结果段",
+                    en: "Using verified VERIFY_LOG.txt & FACTS.md, load paper-write and draft outputs/writer/results.tex"
+                  }
+                },
+                {
+                  at: 540,
+                  type: "tool",
+                  name: "Read(skills/paper-write/SKILL.md, VERIFY_LOG.txt, outputs/engineer/FACTS.md)",
+                  sub: {
+                    zh: "核对受控数值引用：A=6.0 (18/3), B=7.0 (21/3), Δ=+1.0",
+                    en: "Grounded numerical citation: A=6.0 (18/3), B=7.0 (21/3), Δ=+1.0"
+                  }
+                },
+                {
+                  at: 980,
+                  type: "file",
+                  head: "outputs/writer/results.tex",
+                  meta: "initial draft · 2 lines",
+                  body: {
+                    zh: "+ 在 6 条消融记录（A、B 各 3 条）中，配置 B 样本均值为 7.0（21/3），配置 A 为 6.0（18/3），均值差 Δ = +1.0。\n+ 该结果表明配置 B 在当前消融设置下带来稳定显著提升。",
+                    en: "+ Across the 6 ablation records (3 per group), Setting B achieves a mean of 7.0 (21/3) vs. 6.0 (18/3) for Setting A (Δ = +1.0).\n+ This shows a significant improvement for Setting B under the ablation setting."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "review",
+          num: "6",
+          label: { zh: "独立审阅与修改", en: "Review & Revise" },
+          caption: {
+            zh: "6. 独立审阅提示“区分观测均值差与统计显著性”，写作角色完成修订并交回主 Agent",
+            en: "6. Fresh reviewer asks to separate observed mean difference from significance; Writer revises results.tex"
+          },
+          focusedPane: "writer",
+          handoff: {
+            zh: "写作 → 主会话 · 交付修订后的 results.tex",
+            en: "writer → main · deliver revised results.tex"
+          },
+          mcpVisible: true,
+          badges: { main: "verifying", eng: "idle", writer: "revising" },
+          files: { plan: "updated", exp: "verified", audit: "verified", tex: "revised" },
+          inputs: {
+            main: "",
+            engineer: "",
+            writer: "按独立审阅意见修订 outputs/writer/results.tex：仅陈述观测均值差 Δ=+1.0，不作统计显著性宣称"
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "tool", name: "Bash(superaris watch . --id writer-round1 --worker-role writer)", sub: { zh: "watching outputs/writer/results.tex", en: "watching outputs/writer/results.tex" } }
+              ],
+              steps: [
+                {
+                  at: 320,
+                  type: "tool",
+                  name: "MCP(research-review · fresh-context reviewer)",
+                  sub: {
+                    zh: "后台独立上下文审阅（不占用第四常驻窗格）：要求区分观测均值变化与统计显著性",
+                    en: "Fresh-context MCP call (no 4th resident pane): separate observed mean shift from significance"
+                  }
+                },
+                {
+                  at: 1220,
+                  type: "tool",
+                  name: "Bash(superaris acknowledge . --id writer-round1 --evidence outputs/writer/results.tex)",
+                  sub: {
+                    zh: "已核对修订版段落：数值（6.0 / 7.0 / Δ=+1.0）与边界表述全部对齐",
+                    en: "Verified revised paragraph: numbers (6.0 / 7.0 / Δ=+1.0) and scope claims aligned"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [
+                { type: "info", text: { zh: "outputs/engineer/report.json (A=6.0, B=7.0, Δ=+1.0) 保持冻结供核查。", en: "outputs/engineer/report.json (A=6.0, B=7.0, Δ=+1.0) frozen as ground truth." } }
+              ],
+              steps: []
+            },
+            writer: {
+              history: [
+                { type: "file", head: "outputs/writer/results.tex", meta: "draft v1", body: { zh: "+ 该结果表明配置 B 在当前消融设置下带来稳定显著提升。", en: "+ This shows a significant improvement for Setting B under the ablation setting." } }
+              ],
+              steps: [
+                {
+                  at: 180,
+                  type: "cmd",
+                  text: {
+                    zh: "按独立审阅意见修订 outputs/writer/results.tex：仅陈述观测均值差 Δ=+1.0，不作统计显著性宣称",
+                    en: "Revise outputs/writer/results.tex per fresh review: state observed mean shift Δ=+1.0 without significance claims"
+                  }
+                },
+                {
+                  at: 660,
+                  type: "tool",
+                  name: "Update(outputs/writer/results.tex)",
+                  sub: {
+                    zh: "已更新第 2 行表述，并运行 superaris report . --id writer-round1 --outcome completed",
+                    en: "Updated line 2 claim scope and ran superaris report . --id writer-round1 --outcome completed"
+                  }
+                },
+                {
+                  at: 1020,
+                  type: "file",
+                  head: "outputs/writer/results.tex",
+                  meta: "revised · defensible paragraph",
+                  body: {
+                    zh: "  在 6 条消融记录（A、B 各 3 条）中，配置 B 样本均值为 7.0（21/3），配置 A 为 6.0（18/3），观测均值差 Δ = +1.0。\n- 该结果表明配置 B 在当前消融设置下带来稳定显著提升。\n+ 受限于每组 n = 3 的样本规模，本文仅报告观测均值变化，不做统计显著性推断。",
+                    en: "  Across the 6 ablation records (3 per group), Setting B reaches a mean of 7.0 (21/3) vs. 6.0 (18/3) for Setting A (observed Δ = +1.0).\n- This shows a significant improvement for Setting B under the ablation setting.\n+ Given the small sample size (n = 3 per group), we report this observed mean difference without claiming statistical significance."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          id: "record",
+          num: "7",
+          label: { zh: "记录与继续", en: "Record & Continue" },
+          caption: {
+            zh: "7. 记录已验收结果与证据，重进项目直接复用原 3 个终端并衔接“补充消融计划”",
+            en: "7. Record accepted evidence; re-entering reuses the 3 original terminals and queues the follow-up plan"
+          },
+          focusedPane: "main",
+          handoff: null,
+          mcpVisible: false,
+          badges: { main: "reused", eng: "reused", writer: "reused" },
+          files: { plan: "updated", exp: "verified", audit: "verified", tex: "revised" },
+          inputs: {
+            main: "superaris start . --host orca --no-attach",
+            engineer: "",
+            writer: ""
+          },
+          panes: {
+            main: {
+              history: [
+                { type: "tool", name: "Bash(superaris remember . --file MEMORY.md --kind delivery)", sub: { zh: "已记录已验收结果段与证据链，保留人工备注", en: "Appended accepted delivery event to MEMORY.md, preserving human notes" } }
+              ],
+              steps: [
+                {
+                  at: 180,
+                  type: "cmd",
+                  text: {
+                    zh: "superaris start . --host orca --no-attach",
+                    en: "superaris start . --host orca --no-attach"
+                  }
+                },
+                {
+                  at: 560,
+                  type: "tool",
+                  name: "Bash(orca status --json && orca terminal list --json)",
+                  sub: {
+                    zh: "核对本地 runtime 与原 3 个终端会话在位 · 项目 receiver 继续运行",
+                    en: "Verified local runtime & all 3 original terminals active · project receiver reused"
+                  }
+                },
+                {
+                  at: 1020,
+                  type: "file",
+                  head: "CURRENT.md · REENTRY",
+                  meta: "3 terminals reused · next queued",
+                  body: {
+                    zh: "+ status: ACCEPTED (A=6.0, B=7.0, Δ=+1.0 | VERIFY_LOG.txt + results.tex)\n+ roles: main/engineer/writer action=\"reused\" (no duplicate agents)\n+ next_authorized_step: 补充消融计划 (prepare follow-up ablation plan)",
+                    en: "+ status: ACCEPTED (A=6.0, B=7.0, Δ=+1.0 | VERIFY_LOG.txt + results.tex)\n+ roles: main/engineer/writer action=\"reused\" (no duplicate agents)\n+ next_authorized_step: prepare follow-up ablation plan"
+                  }
+                }
+              ]
+            },
+            engineer: {
+              history: [],
+              steps: [
+                {
+                  at: 720,
+                  type: "info",
+                  text: {
+                    zh: "已复用原 engineer 终端，等待下一轮“补充消融计划”核查。",
+                    en: "Reused original engineer terminal, ready for follow-up ablation checks."
+                  }
+                }
+              ]
+            },
+            writer: {
+              history: [],
+              steps: [
+                {
+                  at: 840,
+                  type: "info",
+                  text: {
+                    zh: "已复用原 writer 终端，outputs/writer/results.tex 已归档。",
+                    en: "Reused original writer terminal with archived outputs/writer/results.tex."
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ];
+
+      const RECORD_ENTRIES = {
+        zh: [
+          "1/7 启动 · ablation-notes 绑定 Orca 3 个本地 Terminal 会话",
+          "2/7 目标 · 先核对 6 条消融记录（A、B 各 3 条），再写结果段",
+          "3/7 分工 · engineer 独占 outputs/engineer，writer 独占 outputs/writer",
+          "4/7 验收 · main 独立复算 A=6.0, B=7.0, Δ=+1.0 写入 VERIFY_LOG.txt",
+          "5/7 写作 · writer 基于已验收事实生成 results.tex 初稿",
+          "6/7 修订 · 区分观测均值差与统计显著性（6 条记录，每组 n=3）",
+          "7/7 继续 · 读回记录复用原 3 角色，衔接下一步：补充消融计划"
+        ],
+        en: [
+          "1/7 Launch · ablation-notes bound to 3 local Orca Terminals",
+          "2/7 Goal · verify 6 ablation records (3 per group) before drafting prose",
+          "3/7 Scope · engineer owns outputs/engineer, writer owns outputs/writer",
+          "4/7 Verify · main recomputes A=6.0, B=7.0, Δ=+1.0 in VERIFY_LOG.txt",
+          "5/7 Draft · writer drafts results.tex from verified facts",
+          "6/7 Revise · separate observed mean shift from significance (6 records, 3/group)",
+          "7/7 Reentry · reuse original 3 terminals; next: follow-up ablation plan"
+        ]
+      };
+
+      const embedOptions = new URLSearchParams(location.search);
+      const embedded = embedOptions.get("embedded") === "1";
+      document.documentElement.classList.toggle("embedded", embedded);
+      const SCENE_DURATION_MS = 6200;
+      const TYPE_CHAR_MS = 22;
+      const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+      const state = {
+        hostActive: !embedded,
+        speed: 2,
+        theme: "warm",
+        lang: "zh",
+        sceneIndex: 0,
+        isPlaying: !reducedMotionQuery.matches,
+        isDocHidden: Boolean(document.hidden),
+        isInViewport: true,
+        reducedMotion: Boolean(reducedMotionQuery.matches),
+        mobilePane: "main",
+        elapsedMs: 0,
+        lastFrameTs: 0,
+        rafId: null,
+        revealedCounts: { main: 0, engineer: 0, writer: 0 }
+      };
+
+      const stageStepsEl = document.getElementById("stage-steps");
+      const stageCaptionEl = document.getElementById("stage-caption");
+      const handoffPillEl = document.getElementById("handoff-pill");
+      const playPauseBtn = document.getElementById("play-pause-btn");
+      const playPauseIcon = document.getElementById("play-pause-icon");
+      const playPauseLabel = document.getElementById("play-pause-label");
+      const replayBtn = document.getElementById("replay-btn");
+      const mcpDrawerEl = document.getElementById("mcp-drawer");
+      const mcpTitleEl = document.getElementById("mcp-title");
+      const mcpBodyEl = document.getElementById("mcp-body");
+      const windowStageBadge = document.getElementById("window-stage-badge");
+      const recordEl = document.getElementById("project-record");
+
+      function pickLang(val) {
+        if (val && typeof val === "object" && !Array.isArray(val)) {
+          return val[state.lang] || val.zh || val.en || "";
+        }
+        return val || "";
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function typingDuration(sc) {
+        return (sc.inputs[sc.focusedPane] || "").length * TYPE_CHAR_MS;
+      }
+
+      function sceneDuration(sc) {
+        const last = Math.max(
+          0,
+          ...Object.values(sc.panes).flatMap(function (p) {
+            return (p.steps || []).map(function (x) { return x.at || 0; });
+          })
+        );
+        return Math.max(SCENE_DURATION_MS, typingDuration(sc) + last + 1100);
+      }
+
+      function isAtFinalEnd() {
+        const sc = SCENES[state.sceneIndex];
+        return state.sceneIndex === SCENES.length - 1 && state.elapsedMs >= sceneDuration(sc);
+      }
+
+      function isEffectivelyRunning() {
+        return state.isPlaying && state.hostActive && !state.isDocHidden && state.isInViewport && !state.reducedMotion;
+      }
+
+      function syncClock() {
+        if (!isEffectivelyRunning()) {
+          if (state.rafId !== null) cancelAnimationFrame(state.rafId);
+          state.rafId = null;
+          state.lastFrameTs = 0;
+        } else if (state.rafId === null) {
+          state.rafId = requestAnimationFrame(onAnimationFrame);
+        }
+      }
+
+      function syncPlayButtonUI() {
+        if (state.reducedMotion) {
+          playPauseIcon.textContent = "→";
+          playPauseLabel.textContent = state.lang === "zh" ? "下一幕" : "Next";
+        } else if (state.isPlaying) {
+          playPauseIcon.textContent = "⏸";
+          playPauseLabel.textContent = state.lang === "zh" ? "暂停" : "Pause";
+        } else if (isAtFinalEnd()) {
+          playPauseIcon.textContent = "↻";
+          playPauseLabel.textContent = state.lang === "zh" ? "重播" : "Replay";
+        } else {
+          playPauseIcon.textContent = "▶";
+          playPauseLabel.textContent = state.lang === "zh" ? "播放" : "Play";
+        }
+      }
+
+      function buildStageButtons() {
+        stageStepsEl.innerHTML = "";
+        SCENES.forEach(function (sc, idx) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "stage-btn" + (idx === state.sceneIndex ? " active" : "");
+          btn.setAttribute("role", "tab");
+          btn.setAttribute("aria-selected", idx === state.sceneIndex ? "true" : "false");
+          btn.innerHTML =
+            '<span class="stage-num">' + sc.num + "</span>" +
+            "<span>" + escapeHtml(pickLang(sc.label)) + "</span>" +
+            '<span class="stage-progress" id="prog-' + idx + '"></span>';
+          btn.addEventListener("click", function () {
+            state.isPlaying = false;
+            loadScene(idx, { revealImmediately: true, syncMobileFocus: true });
+            syncPlayButtonUI();
+          });
+          stageStepsEl.appendChild(btn);
+        });
+      }
+
+      function renderEntryElement(item, paneKey, isHistory) {
+        const div = document.createElement("div");
+        div.className = "t-entry" + (isHistory ? " t-history" : "");
+
+        if (item.type === "cmd") {
+          div.className += " t-cmd";
+          div.innerHTML = '<span class="p-char">&gt;</span>' + escapeHtml(pickLang(item.text));
+        } else if (item.type === "tool") {
+          div.className += " t-tool";
+          div.innerHTML =
+            '<div class="t-tool-head"><span class="t-tool-dot">●</span><span>' +
+            escapeHtml(item.name) +
+            "</span></div>" +
+            (item.sub
+              ? '<div class="t-tool-sub">⎿  ' + escapeHtml(pickLang(item.sub)) + "</div>"
+              : "");
+        } else if (item.type === "info") {
+          div.className += " t-info";
+          div.textContent = pickLang(item.text);
+        } else if (item.type === "wizard") {
+          const rows = pickLang(item.rows) || [];
+          const rowsHtml = rows
+            .map(function (r) {
+              return (
+                '<div class="t-cli-wizard-row">' +
+                '<span class="q-mark">✓</span>' +
+                "<span>" + escapeHtml(r[0]) + "：</span>" +
+                '<span class="ans-val">' + escapeHtml(r[1]) + "</span>" +
+                "</div>"
+              );
+            })
+            .join("");
+          div.className += " t-cli-wizard";
+          div.innerHTML =
+            '<div class="t-cli-wizard-title">' +
+            "<span>" + escapeHtml(pickLang(item.title)) + "</span>" +
+            '<span style="color:var(--orca-green)">[confirmed]</span>' +
+            "</div>" +
+            rowsHtml;
+        } else if (item.type === "file") {
+          const rawBody = pickLang(item.body);
+          const bodyHtml = escapeHtml(rawBody)
+            .split("\n")
+            .map(function (line) {
+              if (line.trim().startsWith("+")) return '<div class="t-diff-add">' + line + "</div>";
+              if (line.trim().startsWith("-")) return '<div class="t-diff-del">' + line + "</div>";
+              return "<div>" + line + "</div>";
+            })
+            .join("");
+          const fullPath = String(item.head || "");
+          const slashIdx = fullPath.lastIndexOf("/");
+          const baseName = slashIdx >= 0 ? fullPath.slice(slashIdx + 1) : fullPath;
+          const dirPrefix = slashIdx >= 0 ? fullPath.slice(0, slashIdx + 1) : "";
+          div.className += " t-file-card";
+          div.innerHTML =
+            '<div class="t-file-head"><span class="t-file-title" title="' +
+            escapeHtml(fullPath) +
+            '">' +
+            escapeHtml(baseName) +
+            (dirPrefix ? '<span class="t-file-path">' + escapeHtml(dirPrefix) + "</span>" : "") +
+            '</span><span class="t-muted">' +
+            escapeHtml(item.meta || "") +
+            "</span></div><div>" +
+            bodyHtml +
+            "</div>";
+        }
+        return div;
+      }
+
+      function updateInputsForElapsed(sc, elapsedMs, revealAll) {
+        const submitThreshold = typingDuration(sc) + 180;
+        ["main", "engineer", "writer"].forEach(function (paneKey) {
+          const inputEl = document.getElementById("input-" + paneKey);
+          const fullText = sc.inputs[paneKey] || "";
+          if (paneKey !== sc.focusedPane || !fullText || revealAll || elapsedMs >= submitThreshold) {
+            inputEl.textContent = "";
+          } else {
+            const charsToShow = Math.min(fullText.length, Math.floor(elapsedMs / TYPE_CHAR_MS));
+            inputEl.textContent = fullText.slice(0, charsToShow);
+          }
+        });
+      }
+
+      function revealStepsUpTo(sc, elapsedMs, revealAll) {
+        ["main", "engineer", "writer"].forEach(function (paneKey) {
+          const paneData = sc.panes[paneKey] || { history: [], steps: [] };
+          const steps = paneData.steps || [];
+          const container = document.getElementById("logs-" + paneKey);
+          const streamEl = document.getElementById("stream-" + paneKey);
+
+          let targetCount = 0;
+          for (let i = 0; i < steps.length; i++) {
+            const threshold = revealAll ? 0 : typingDuration(sc) + (steps[i].at || 0);
+            if (revealAll || elapsedMs >= threshold) {
+              targetCount = i + 1;
+            }
+          }
+
+          while (state.revealedCounts[paneKey] < targetCount) {
+            const stepItem = steps[state.revealedCounts[paneKey]];
+            container.appendChild(renderEntryElement(stepItem, paneKey, false));
+            state.revealedCounts[paneKey]++;
+            streamEl.scrollTop = streamEl.scrollHeight;
+          }
+        });
+      }
+
+      function updateRecordAndOverlays(sc, elapsedMs, revealAll) {
+        const list = RECORD_ENTRIES[state.lang] || RECORD_ENTRIES.zh;
+        const stepReady = revealAll || elapsedMs >= typingDuration(sc) + 320;
+        const count = Math.min(list.length, Math.max(1, state.sceneIndex + (stepReady ? 1 : 0)));
+        const latestEntry = list[count - 1] || list[0];
+        recordEl.innerHTML =
+          '<span class="record-chip" title="' +
+          escapeHtml(list.slice(0, count).join(" | ")) +
+          '" style="border-color:var(--orca-amber);color:#fff;">' +
+          escapeHtml(latestEntry) +
+          "</span>";
+
+        const showHandoff = Boolean(sc.handoff && (revealAll || elapsedMs >= typingDuration(sc) + 250));
+        handoffPillEl.classList.toggle("visible", showHandoff);
+        handoffPillEl.textContent = showHandoff ? "⇄ " + pickLang(sc.handoff) : "";
+
+        const showMcp = Boolean(sc.mcpVisible && (revealAll || elapsedMs >= typingDuration(sc) + 260));
+        mcpDrawerEl.classList.toggle("visible", showMcp);
+      }
+
+      function updateProgressBars(pct) {
+        SCENES.forEach(function (_, idx) {
+          const bar = document.getElementById("prog-" + idx);
+          if (!bar) return;
+          if (idx < state.sceneIndex) {
+            bar.style.width = "100%";
+          } else if (idx === state.sceneIndex) {
+            bar.style.width = Math.min(100, Math.max(0, pct)) + "%";
+          } else {
+            bar.style.width = "0%";
+          }
+        });
+      }
+
+      function setMobilePane(paneKey) {
+        state.mobilePane = paneKey;
+        ["main", "engineer", "writer"].forEach(function (k) {
+          document.getElementById("pane-" + k).classList.toggle("mobile-active", k === paneKey);
+        });
+        document.querySelectorAll(".mobile-pane-btn").forEach(function (btn) {
+          btn.classList.toggle("active", btn.getAttribute("data-pane") === paneKey);
+        });
+      }
+
+      function loadScene(index, opts) {
+        const options = opts || {};
+        const revealAll =
+          options.revealImmediately === undefined
+            ? state.reducedMotion
+            : Boolean(options.revealImmediately);
+
+        state.sceneIndex = Math.max(0, Math.min(SCENES.length - 1, index));
+        const sc = SCENES[state.sceneIndex];
+        state.elapsedMs = revealAll ? sceneDuration(sc) : (options.elapsedMs || 0);
+        state.revealedCounts = { main: 0, engineer: 0, writer: 0 };
+
+        if (options.syncMobileFocus !== false) {
+          setMobilePane(sc.focusedPane);
+        }
+
+        const btns = stageStepsEl.querySelectorAll(".stage-btn");
+        btns.forEach(function (b, idx) {
+          const isAct = idx === state.sceneIndex;
+          b.classList.toggle("active", isAct);
+          b.setAttribute("aria-selected", isAct ? "true" : "false");
+          if (isAct && stageStepsEl.scrollWidth > stageStepsEl.clientWidth) {
+            const targetLeft = b.offsetLeft - (stageStepsEl.clientWidth - b.offsetWidth) / 2;
+            stageStepsEl.scrollLeft = Math.max(0, targetLeft);
+          }
+        });
+
+        stageCaptionEl.textContent = pickLang(sc.caption);
+        windowStageBadge.textContent = "orca · " + sc.id;
+        document.getElementById("mobile-stage-tag").textContent = sc.num + "/7 · " + pickLang(sc.label);
+        document.getElementById("foot-state-main").textContent = sc.badges.main;
+        document.getElementById("foot-state-eng").textContent = sc.badges.eng;
+        document.getElementById("foot-state-writer").textContent = sc.badges.writer;
+
+        ["main", "engineer", "writer"].forEach(function (paneKey) {
+          const paneEl = document.getElementById("pane-" + paneKey);
+          const cursorEl = document.getElementById("cursor-" + paneKey);
+          const isFocus = sc.focusedPane === paneKey;
+          paneEl.classList.toggle("pane-focused", isFocus);
+          cursorEl.style.display = isFocus ? "inline-block" : "none";
+        });
+
+        document.getElementById("badge-main").textContent = sc.badges.main;
+        document.getElementById("badge-eng").textContent = sc.badges.eng;
+        document.getElementById("badge-writer").textContent = sc.badges.writer;
+
+        document.getElementById("sidebar-agent-main").classList.toggle("active-role", sc.focusedPane === "main");
+        document.getElementById("sidebar-agent-eng").classList.toggle("active-role", sc.focusedPane === "engineer");
+        document.getElementById("sidebar-agent-writer").classList.toggle("active-role", sc.focusedPane === "writer");
+
+        const fileMap = [
+          ["file-plan", "file-plan-stat", sc.files.plan],
+          ["file-exp", "file-exp-stat", sc.files.exp],
+          ["file-audit", "file-audit-stat", sc.files.audit],
+          ["file-tex", "file-tex-stat", sc.files.tex]
+        ];
+        fileMap.forEach(function (pair) {
+          const rowEl = document.getElementById(pair[0]);
+          const statEl = document.getElementById(pair[1]);
+          statEl.textContent = pair[2];
+          rowEl.classList.toggle(
+            "updated",
+            pair[2] === "updated" || pair[2] === "revised" || pair[2] === "verified"
+          );
+        });
+
+        ["main", "engineer", "writer"].forEach(function (paneKey) {
+          const container = document.getElementById("logs-" + paneKey);
+          container.innerHTML = "";
+          const paneData = sc.panes[paneKey] || { history: [], steps: [] };
+          const historyItems = paneData.history || [];
+
+          if (historyItems.length > 0) {
+            historyItems.forEach(function (hItem) {
+              container.appendChild(renderEntryElement(hItem, paneKey, true));
+            });
+            const divider = document.createElement("div");
+            divider.className = "history-divider";
+            divider.textContent = I18N[state.lang].history_label;
+            container.appendChild(divider);
+          }
+        });
+
+        updateInputsForElapsed(sc, state.elapsedMs, revealAll);
+        revealStepsUpTo(sc, state.elapsedMs, revealAll);
+        updateRecordAndOverlays(sc, state.elapsedMs, revealAll);
+        updateProgressBars((state.elapsedMs / sceneDuration(sc)) * 100);
+        syncPlayButtonUI();
+        syncClock();
+      }
+
+      function onAnimationFrame(ts) {
+        state.rafId = null;
+        if (!state.lastFrameTs) {
+          state.lastFrameTs = ts;
+        }
+        const delta = Math.min(120, Math.max(0, ts - state.lastFrameTs));
+        state.lastFrameTs = ts;
+
+        if (isEffectivelyRunning()) {
+          state.elapsedMs += delta * state.speed;
+          const sc = SCENES[state.sceneIndex];
+          const duration = sceneDuration(sc);
+          updateInputsForElapsed(sc, state.elapsedMs, false);
+          revealStepsUpTo(sc, state.elapsedMs, false);
+          updateRecordAndOverlays(sc, state.elapsedMs, false);
+          updateProgressBars((state.elapsedMs / duration) * 100);
+
+          if (state.elapsedMs >= duration) {
+            if (state.sceneIndex < SCENES.length - 1) {
+              loadScene(state.sceneIndex + 1, { revealImmediately: false, syncMobileFocus: true });
+            } else {
+              // Natural end on Beat 7: hold final frame with Replay button
+              state.elapsedMs = duration;
+              state.isPlaying = false;
+              updateProgressBars(100);
+              syncPlayButtonUI();
+            }
+          }
+        }
+
+        syncClock();
+      }
+
+      function applyLanguage(lang) {
+        state.lang = lang;
+        document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+        document.getElementById("lang-zh").classList.toggle("active", lang === "zh");
+        document.getElementById("lang-en").classList.toggle("active", lang === "en");
+
+        const dict = I18N[lang];
+        document.querySelectorAll("[data-i18n]").forEach(function (el) {
+          const key = el.getAttribute("data-i18n");
+          if (dict[key]) el.textContent = dict[key];
+        });
+
+        document.getElementById("mob-tab-main").textContent = dict.mob_main;
+        document.getElementById("mob-tab-engineer").textContent = dict.mob_eng;
+        document.getElementById("mob-tab-writer").textContent = dict.mob_writer;
+        mcpTitleEl.textContent = dict.mcp_title;
+        mcpBodyEl.textContent = dict.mcp_body;
+
+        const preservedElapsed = state.elapsedMs;
+        const wasRevealedAll = state.reducedMotion || preservedElapsed >= sceneDuration(SCENES[state.sceneIndex]);
+        buildStageButtons();
+        loadScene(state.sceneIndex, {
+          revealImmediately: wasRevealedAll,
+          elapsedMs: preservedElapsed,
+          syncMobileFocus: false
+        });
+        syncPlayButtonUI();
+      }
+
+      function applyTheme(theme) {
+        state.theme = theme;
+        document.body.dataset.theme = theme;
+        ["warm", "dark"].forEach(function (t) {
+          const btn = document.getElementById(t === "warm" ? "themeWarmBtn" : "themeDarkBtn");
+          btn.classList.toggle("active", t === theme);
+          btn.setAttribute("aria-pressed", String(t === theme));
+        });
+      }
+
+      // Event Listeners
+      playPauseBtn.addEventListener("click", function () {
+        if (state.reducedMotion) {
+          const nextIdx = (state.sceneIndex + 1) % SCENES.length;
+          loadScene(nextIdx, { revealImmediately: true, syncMobileFocus: true });
+          return;
+        }
+        if (isAtFinalEnd()) {
+          state.isPlaying = true;
+          loadScene(0, { revealImmediately: false, syncMobileFocus: true });
+          return;
+        }
+        state.isPlaying = !state.isPlaying;
+        syncPlayButtonUI();
+        syncClock();
+      });
+
+      replayBtn.addEventListener("click", function () {
+        if (state.reducedMotion) {
+          state.isPlaying = false;
+          loadScene(0, { revealImmediately: true, syncMobileFocus: true });
+        } else {
+          state.isPlaying = true;
+          loadScene(0, { revealImmediately: false, syncMobileFocus: true });
+        }
+        syncPlayButtonUI();
+      });
+
+      document.getElementById("playbackSpeed").addEventListener("change", function (e) {
+        state.speed = Number(e.target.value) || 2;
+        state.lastFrameTs = 0;
+      });
+
+      document.getElementById("lang-zh").addEventListener("click", function () { applyLanguage("zh"); });
+      document.getElementById("lang-en").addEventListener("click", function () { applyLanguage("en"); });
+
+      document.getElementById("themeWarmBtn").addEventListener("click", function () { applyTheme("warm"); });
+      document.getElementById("themeDarkBtn").addEventListener("click", function () { applyTheme("dark"); });
+
+      document.querySelectorAll(".mobile-pane-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          setMobilePane(btn.getAttribute("data-pane"));
+        });
+      });
+
+      document.addEventListener("visibilitychange", function () {
+        state.isDocHidden = Boolean(document.hidden);
+        state.lastFrameTs = 0;
+        syncClock();
+      });
+
+      if ("IntersectionObserver" in window) {
+        const workbenchEl = document.getElementById("orca-workbench");
+        const io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              state.isInViewport = Boolean(entry.isIntersecting);
+              state.lastFrameTs = 0;
+              syncClock();
+            });
+          },
+          { threshold: 0.15 }
+        );
+        if (workbenchEl) io.observe(workbenchEl);
+      }
+
+      if (reducedMotionQuery.addEventListener) {
+        reducedMotionQuery.addEventListener("change", function (e) {
+          state.reducedMotion = Boolean(e.matches);
+          if (state.reducedMotion) {
+            state.isPlaying = false;
+            loadScene(state.sceneIndex, { revealImmediately: true, syncMobileFocus: false });
+          }
+          syncPlayButtonUI();
+        });
+      }
+
+      // Deterministic QA & Screenshot Hook
+      const demoHook = {
+        state: state,
+        goTo: function (index, opts) {
+          state.isPlaying = false;
+          loadScene(Number(index) || 0, Object.assign({ revealImmediately: true, syncMobileFocus: true }, opts || {}));
+          syncPlayButtonUI();
+          return demoHook.getState();
+        },
+        render: function (index, elapsedMs) {
+          state.isPlaying = false;
+          loadScene(Number(index) || 0, {
+            revealImmediately: false,
+            elapsedMs: Number(elapsedMs) || 0,
+            syncMobileFocus: true
+          });
+          syncPlayButtonUI();
+          return demoHook.getState();
+        },
+        getState: function () {
+          const sc = SCENES[state.sceneIndex];
+          return {
+            language: state.lang,
+            hostActive: state.hostActive,
+            step: state.sceneIndex,
+            sceneId: sc ? sc.id : "",
+            playing: state.isPlaying,
+            speed: state.speed,
+            theme: state.theme,
+            mobilePane: state.mobilePane,
+            elapsedMs: Math.round(state.elapsedMs),
+            sceneDuration: sceneDuration(sc),
+            typingDuration: typingDuration(sc),
+            revealedCounts: Object.assign({}, state.revealedCounts)
+          };
+        }
+      };
+
+      window.orcaDemo = demoHook;
+      window.SuperARISDemo = demoHook;
+
+      if (embedded) {
+        window.addEventListener("message", function(event) {
+          if (event.source !== parent || event.origin !== location.origin || event.data?.type !== "superaris-host-demo") return;
+          const message=event.data;
+          state.hostActive=Boolean(message.active); state.lastFrameTs=0;
+          if (["zh","en"].includes(message.language) && message.language !== state.lang) applyLanguage(message.language);
+          if (["warm","dark"].includes(message.theme) && message.theme !== state.theme) applyTheme(message.theme);
+          syncClock();
+        });
+        const reportSize=function() {
+          parent.postMessage({type:"superaris-demo-size", height:Math.ceil(document.querySelector(".page-shell").getBoundingClientRect().height)}, location.origin);
+        };
+        new ResizeObserver(reportSize).observe(document.querySelector(".page-shell"));
+        window.addEventListener("load", reportSize);
+      }
+
+      // Initialize with defaults: Chinese, Warm outer page, 2x speed, Stage 0
+      applyTheme("warm");
+      applyLanguage(embedOptions.get("lang") === "en" ? "en" : "zh");
+      loadScene(0, { revealImmediately: state.reducedMotion, syncMobileFocus: true });
+      syncClock();
+    })();
+  </script>
+</body>
+</html>
