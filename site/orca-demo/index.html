@@ -1172,6 +1172,15 @@
     html.embedded .topbar { border:0; border-radius:0; padding:4px 0; background:transparent; }
     html.embedded .topbar .brand-title, html.embedded .topbar .seg-group { display:none; }
     html.embedded .orca-window { box-shadow:none; }
+
+    .team-mode-switch { display:inline-flex; gap:2px; padding:2px; border:1px solid var(--border-page); border-radius:6px; }
+    .team-mode-switch .seg-btn { border:0; border-radius:4px; }
+    .cli-mascot::before { content:attr(data-mark); }
+    .orca-term-pane[data-harness="claude"] .cli-mascot { color:#e6a28a; border-color:#82594c; }
+    .orca-term-pane[data-harness="agy"] .cli-mascot { color:#91d5db; border-color:#467e84; }
+    .t-delivery-notice { padding:7px 9px; border:1px solid #62553a; border-radius:5px; color:#ead6a4; background:rgba(160,126,61,.08); }
+    .t-open-action { color:#a3d7d3; padding:4px 0; font-weight:600; }
+    @media(max-width:520px) { .controls-group { gap:4px; } .team-mode-switch .seg-btn { font-size:11px; padding:4px 6px; } .ctrl-select > span { display:none; } }
   </style>
 </head>
 <body data-theme="warm">
@@ -1187,6 +1196,10 @@
       </div>
 
       <div class="controls-group">
+        <div class="team-mode-switch" role="group" aria-label="Team mode">
+          <button type="button" class="seg-btn active" id="team-multi" aria-pressed="true" data-i18n="team_multi" title="切换后从头播放">多模型团队</button>
+          <button type="button" class="seg-btn" id="team-codex" aria-pressed="false" data-i18n="team_codex" title="切换后从头播放">单模型团队</button>
+        </div>
         <button type="button" class="ctrl-btn primary" id="play-pause-btn">
           <span id="play-pause-icon">⏸</span>
           <span id="play-pause-label">暂停</span>
@@ -1502,10 +1515,12 @@
     </main>
   </div>
 
+  <script src="team-modes.js"></script>
   <script>
     (function () {
       const I18N = {
         zh: {
+          team_multi:"多模型团队", team_codex:"单模型团队",
           header_badge: "Orca 演示",
           demo_note: "交互演示 · 示例项目与数据",
           replay_label: "重播",
@@ -1526,6 +1541,7 @@
           mcp_body: "审阅意见：将「观测均值差（A=6.0, B=7.0, Δ=+1.0）」与「统计显著性」分开表述；6 条记录（每组 3 条）不宣称显著性。"
         },
         en: {
+          team_multi:"Multi-model", team_codex:"Single-model",
           header_badge: "Orca Demo",
           demo_note: "Interactive demo · sample project & data",
           replay_label: "Replay",
@@ -1547,7 +1563,7 @@
         }
       };
 
-      const SCENES = [
+      const SINGLE_SCENES = [
         {
           id: "launch",
           num: "1",
@@ -2156,7 +2172,7 @@
         }
       ];
 
-      const RECORD_ENTRIES = {
+      const SINGLE_RECORD_ENTRIES = {
         zh: [
           "1/7 启动 · ablation-notes 绑定 Orca 3 个本地 Terminal 会话",
           "2/7 目标 · 先核对 6 条消融记录（A、B 各 3 条），再写结果段",
@@ -2180,11 +2196,16 @@
       const embedOptions = new URLSearchParams(location.search);
       const embedded = embedOptions.get("embedded") === "1";
       document.documentElement.classList.toggle("embedded", embedded);
+      const multiVariant = window.OrcaTeamModes.build(SINGLE_SCENES, SINGLE_RECORD_ENTRIES);
+      const initialTeamMode = embedOptions.get("team") === "codex" ? "codex" : "multi";
+      let SCENES = initialTeamMode === "multi" ? multiVariant.scenes : SINGLE_SCENES;
+      let RECORD_ENTRIES = initialTeamMode === "multi" ? multiVariant.records : SINGLE_RECORD_ENTRIES;
       const SCENE_DURATION_MS = 6200;
       const TYPE_CHAR_MS = 22;
       const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
       const state = {
+        teamMode: initialTeamMode,
         hostActive: !embedded,
         speed: 2,
         theme: "warm",
@@ -2229,7 +2250,7 @@
       }
 
       function typingDuration(sc) {
-        return (sc.inputs[sc.focusedPane] || "").length * TYPE_CHAR_MS;
+        return pickLang(sc.inputs[sc.focusedPane]).length * TYPE_CHAR_MS;
       }
 
       function sceneDuration(sc) {
@@ -2304,7 +2325,10 @@
 
         if (item.type === "cmd") {
           div.className += " t-cmd";
-          div.innerHTML = '<span class="p-char">&gt;</span>' + escapeHtml(pickLang(item.text));
+          div.innerHTML = '<span class="p-char">' + (state.teamMode === 'multi' && paneKey === 'main' ? '❯' : '›') + '</span>' + escapeHtml(pickLang(item.text));
+        } else if (item.type === "notice" || item.type === "open") {
+          div.className += item.type === "notice" ? " t-delivery-notice" : " t-open-action";
+          div.textContent = (item.type === "notice" ? "↗ " : "↖ ") + pickLang(item.text);
         } else if (item.type === "tool") {
           div.className += " t-tool";
           div.innerHTML =
@@ -2371,7 +2395,7 @@
         const submitThreshold = typingDuration(sc) + 180;
         ["main", "engineer", "writer"].forEach(function (paneKey) {
           const inputEl = document.getElementById("input-" + paneKey);
-          const fullText = sc.inputs[paneKey] || "";
+          const fullText = pickLang(sc.inputs[paneKey]);
           if (paneKey !== sc.focusedPane || !fullText || revealAll || elapsedMs >= submitThreshold) {
             inputEl.textContent = "";
           } else {
@@ -2449,6 +2473,38 @@
         });
       }
 
+      function updateTeamChrome(sc) {
+        const multi=state.teamMode === "multi";
+        const names=multi?{main:"Claude Code",engineer:"Codex",writer:"Gemini / AGY"}:{main:"Codex",engineer:"Codex",writer:"Codex"};
+        const short={main:"main",engineer:"eng",writer:"writer"};
+        ["main","engineer","writer"].forEach(function(role) {
+          const pane=document.getElementById("pane-"+role);
+          pane.dataset.harness=multi?(role === "main"?"claude":role === "writer"?"agy":"codex"):"codex";
+          document.getElementById("tab-title-"+short[role]).textContent=role+" · "+names[role];
+          document.querySelector("#sidebar-agent-"+short[role]+" .sb-term-left span:last-child").textContent=role+" · "+names[role];
+          pane.querySelector(".cli-banner-title").innerHTML=escapeHtml(names[role])+ ' <span style="font-weight:400;color:var(--orca-dim)">· configured model</span>';
+          pane.querySelector(".cli-mascot").dataset.mark=multi?(role === "main"?"CC":role === "writer"?"G":">_"):">_";
+          pane.querySelector(".prompt-chevron").textContent=multi && role === "main"?"❯":"›";
+          pane.querySelector(".term-effort-row span").textContent="ARIS · "+(role === "main"?"project-agent":role === "engineer"?"analyze-results":multi && state.sceneIndex < 3?"paper-plan":"paper-write");
+        });
+        const mobile=multi?(state.lang === "zh"?["主控 · CC","工程 · Codex","讨论/写作"]:["Lead · CC","Build · Codex","Think / Write"]):[I18N[state.lang].mob_main,I18N[state.lang].mob_eng,I18N[state.lang].mob_writer];
+        ["main","engineer","writer"].forEach((role,index)=>document.getElementById("mob-tab-"+role).textContent=mobile[index]);
+        document.querySelector(".orca-statusbar .status-group:last-child span:last-child").textContent=multi?"CC / Codex / AGY · 3 agents · local":"3 Codex agents · local";
+        ["multi","codex"].forEach(function(mode) { const button=document.getElementById("team-"+mode);button.classList.toggle("active",mode===state.teamMode);button.setAttribute("aria-pressed",String(mode===state.teamMode));button.title=state.lang === "zh"?"切换后从头播放所选团队":"Switch and replay the selected team"; });
+        mcpTitleEl.textContent=sc.reviewTitle?pickLang(sc.reviewTitle):I18N[state.lang].mcp_title;
+        mcpBodyEl.textContent=sc.reviewBody?pickLang(sc.reviewBody):I18N[state.lang].mcp_body;
+      }
+      function selectTeamMode(mode) {
+        if (!["multi","codex"].includes(mode) || mode === state.teamMode) return;
+        state.teamMode=mode;
+        SCENES=mode === "multi"?multiVariant.scenes:SINGLE_SCENES;
+        RECORD_ENTRIES=mode === "multi"?multiVariant.records:SINGLE_RECORD_ENTRIES;
+        state.isPlaying=!state.reducedMotion;state.lastFrameTs=0;
+        buildStageButtons();loadScene(0,{revealImmediately:state.reducedMotion,syncMobileFocus:true});syncPlayButtonUI();
+        if (embedded) parent.postMessage({type:"superaris-team-mode",teamMode:mode},location.origin);
+      }
+      ["multi","codex"].forEach(mode=>document.getElementById("team-"+mode).addEventListener("click",()=>selectTeamMode(mode)));
+
       function loadScene(index, opts) {
         const options = opts || {};
         const revealAll =
@@ -2458,6 +2514,7 @@
 
         state.sceneIndex = Math.max(0, Math.min(SCENES.length - 1, index));
         const sc = SCENES[state.sceneIndex];
+        updateTeamChrome(sc);
         state.elapsedMs = revealAll ? sceneDuration(sc) : (options.elapsedMs || 0);
         state.revealedCounts = { main: 0, engineer: 0, writer: 0 };
 
@@ -2692,6 +2749,7 @@
       // Deterministic QA & Screenshot Hook
       const demoHook = {
         state: state,
+        setTeamMode: selectTeamMode,
         goTo: function (index, opts) {
           state.isPlaying = false;
           loadScene(Number(index) || 0, Object.assign({ revealImmediately: true, syncMobileFocus: true }, opts || {}));
@@ -2711,6 +2769,7 @@
         getState: function () {
           const sc = SCENES[state.sceneIndex];
           return {
+            teamMode: state.teamMode,
             language: state.lang,
             hostActive: state.hostActive,
             step: state.sceneIndex,
@@ -2737,6 +2796,7 @@
           state.hostActive=Boolean(message.active); state.lastFrameTs=0;
           if (["zh","en"].includes(message.language) && message.language !== state.lang) applyLanguage(message.language);
           if (["warm","dark"].includes(message.theme) && message.theme !== state.theme) applyTheme(message.theme);
+          if (["multi","codex"].includes(message.teamMode) && message.teamMode !== state.teamMode) selectTeamMode(message.teamMode);
           syncClock();
         });
         const reportSize=function() {
@@ -2751,6 +2811,7 @@
       applyLanguage(embedOptions.get("lang") === "en" ? "en" : "zh");
       loadScene(0, { revealImmediately: state.reducedMotion, syncMobileFocus: true });
       syncClock();
+      if (embedded) parent.postMessage({type:"superaris-team-mode",teamMode:state.teamMode},location.origin);
     })();
   </script>
 </body>

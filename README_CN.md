@@ -12,7 +12,7 @@
 
 *动图预览，点击播放高清完整版。示例项目与数据。*
 
-**Orca 终端演示：**[主页交互版](https://wanshuiyin.github.io/SuperARIS/?host=orca&lang=zh#workbench) · [中文视频](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-zh.mp4) · [English video](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-en.mp4)。
+**Orca 多模型团队：**[主页交互版](https://wanshuiyin.github.io/SuperARIS/?host=orca&lang=zh#workbench) · [中文视频](https://wanshuiyin.github.io/SuperARIS/media/orca-multi-demo-zh.mp4) · [English video](https://wanshuiyin.github.io/SuperARIS/media/orca-multi-demo-en.mp4)。保留[单模型团队（3 个 Codex Agent）](https://wanshuiyin.github.io/SuperARIS/orca-demo/?team=codex&lang=zh)及其[中文](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-zh.mp4)/[英文](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-en.mp4)原视频。
 
 和你的个人 Agent 讨论科研目标，让它组织团队、分配工作、核验成果，并跟进下一步。想深入讨论一个想法、共同修改一段正文，或亲自接手时，直接进入相应成员的会话。
 
