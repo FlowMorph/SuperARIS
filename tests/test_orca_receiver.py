@@ -222,8 +222,13 @@ def test_original_native_lifetime_or_binding_change_stops_child(orca_project, ch
     stopped = fixture.wait_stopped()
     assert stopped["status"] == "stopped" and stopped["owner"] == original["owner"]
     assert stopped["generation"] == original["generation"]
-    assert stopped["outcome"]["reason"] == (
-        "original_owner_changed" if change in {"binding-incarnation", "host", "environment"} else "owner_or_server_unavailable")
+    # A binding edit can be noticed either by ProjectLifetime or by the
+    # in-flight native verification immediately after it. Both paths must
+    # stop without rebinding; their diagnostic reason depends on ordering.
+    expected = {"owner_or_server_unavailable"}
+    if change in {"binding-incarnation", "host", "environment"}:
+        expected.add("original_owner_changed")
+    assert stopped["outcome"]["reason"] in expected
     assert (fixture.root / "launch.json").read_bytes() == original_binding
     assert fixture.count(["terminal", "send"]) == 0
     assert fixture.count(["agent", "launch"]) == fixture.count(["repo", "add"]) == fixture.count(["open"]) == 0
