@@ -11,6 +11,7 @@ from .platform import WINDOWS, command_line, powershell_literal
 import shutil
 
 from .dependencies import productcommand, resolve_aris_repo
+from .state import read
 
 
 _PROJECT_FILES = (
@@ -125,7 +126,7 @@ def _startup_entry(project: Path, harness: str) -> tuple[Path, Path]:
     return entry, source
 
 
-def _navigation(project, role, harness, task, scopes, repo, run, skill_index, originals):
+def _navigation(project, role, harness, task, scopes, repo, run, skill_index, originals, workbench_host):
     """Project-local navigation snapshots, without installing native instructions."""
     catalog_dir = run / "catalog"
     catalog_dir.mkdir()
@@ -219,9 +220,18 @@ def _navigation(project, role, harness, task, scopes, repo, run, skill_index, or
     )
     command = command_line([*productcommand(), "context", str(project), "--role", role, "--skill", "SKILL_NAME"])
     navigation = run / "navigation.md"
+    host_instructions = f"Workbench host: **{workbench_host}**. Recover its original identity from launch.json; do not infer the host from the agent harness.\n\n"
+    host_reference = None
+    if workbench_host == "orca":
+        resource_host = "codex" if harness == "codex" else "claude"
+        source = Path(__file__).resolve().parent / "resources" / resource_host / "project-agent/references/orca-host.md"
+        host_reference = run / "workbench-host.md"
+        shutil.copyfile(source, host_reference)
+        host_instructions += f"Before operating Orca, read `{host_reference}`. This host entry applies even when a project-customized project-agent skill takes precedence. Use the Orca terminal binding, not Herdr environment markers or pane commands.\n\n"
     local_index = "\n".join(f"- {name}: `{path}`" for name, path in skill_index.items())
     navigation.write_text(
         "# ARIS navigation for every role\n\n"
+        + host_instructions +
         "ARIS provides research workflows, project memory and evidence-based acceptance. "
         "Use a **pipeline** for an authorized complete research lifecycle, a **workflow** for one connected stage, "
         "or an individual **skill** for a bounded task. The main owner can delegate any of those granularities; "
@@ -264,7 +274,8 @@ def _navigation(project, role, harness, task, scopes, repo, run, skill_index, or
         "Preparation does not establish delivery or actual reading. Compare the current launch.json binding and original handoff before resuming.\n",
         encoding="utf-8",
     )
-    return {"navigation": str(navigation), "catalog_files": [str(catalog), str(documentation)],
+    return {"workbench_host": workbench_host, "host_reference": str(host_reference) if host_reference else None,
+            "navigation": str(navigation), "catalog_files": [str(catalog), str(documentation)],
             "recovery_pointer": str(recovery_pointer), "role_file": str(role_file), "recovery_file": str(local_recovery)}
 
 
@@ -277,6 +288,7 @@ def prepare_context(
     recovery: list[str] | None = None,
     repo: Path | None = None,
     write_scope: list[str] | None = None,
+    workbench_host: str | None = None,
 ) -> dict:
     """Copy selected skills and write a packet pointing to actual project state.
 
@@ -287,6 +299,10 @@ def prepare_context(
     project = Path(project).expanduser().resolve()
     if not project.is_dir():
         raise ValueError(f"Project directory does not exist: {project}")
+    if workbench_host is None:
+        workbench_host = (read(_within(project / ".aris/workbench/launch.json", project, "Workbench binding"), {}) or {}).get("host", "herdr")
+    if workbench_host not in {"herdr", "orca"}:
+        raise ValueError(f"Unsupported workbench host: {workbench_host!r}")
     role = _name(role, "role")
     if harness not in {"codex", "claude", "agy"}:
         raise ValueError(f"Unsupported harness: {harness!r}")
@@ -388,7 +404,7 @@ def prepare_context(
     startup_entry, startup_source = _startup_entry(project, harness)
     if startup_source not in originals:
         originals.append(startup_source)
-    navigation = _navigation(project, role, harness, task, scopes, repo, run, skill_index, originals)
+    navigation = _navigation(project, role, harness, task, scopes, repo, run, skill_index, originals, workbench_host)
     packet = run / "packet.md"
     original_lines = "\n".join(f"- `{path}`" for path in originals) or "- No standard project or recovery files found."
     recovery_lines = "\n".join(f"- `{path}`" for path in recovery_files) or "- No explicit recovery files supplied."
@@ -398,8 +414,9 @@ def prepare_context(
     precedence += " → bundled SuperARIS project-agent (for that product skill only)"
     precedence += f" → `{host_root}/<name>`"
     packet.write_text(
-        f"# ARIS project role context\n\nRole: {role}\nHarness: {harness}\nProject: `{project}`\n"
-        f"Source ARIS checkout: `{repo}`\n\n## Prepared context task\n\n{task}\n\n"
+        f"# ARIS project role context\n\nRole: {role}\nHarness: {harness}\nWorkbench host: {workbench_host}\nProject: `{project}`\n"
+        + (f"Required workbench instructions: `{navigation['host_reference']}`. Read before host operations.\n\n" if navigation["host_reference"] else "")
+        + f"Source ARIS checkout: `{repo}`\n\n## Prepared context task\n\n{task}\n\n"
         "This is a preparation snapshot; the original owner and current binding determine your current assignment. "
         "A candidate task here does not replace that assignment.\n\n"
         f"## Required startup and recovery reads\n\nRead common ARIS navigation `{navigation['navigation']}`, "

@@ -58,7 +58,7 @@ SuperARIS 基于 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-
 
 ## 安装与启动
 
-需要 Python 3.10+、macOS / Linux / Windows、[Herdr](https://herdr.dev)，以及配置好模型访问的所选原生 CLI（`codex`、`claude`、`agy`）。
+需要 Python 3.10+、macOS / Linux / Windows、[Herdr](https://herdr.dev)（默认）或[可选的 Orca Terminal v1 工作台](docs/ORCA.md)，以及配置好模型访问的所选原生 CLI（`codex`、`claude`、`agy`）。
 
 ```bash
 pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'

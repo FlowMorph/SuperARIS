@@ -161,6 +161,8 @@ def foreground(info: dict, kind: str | None = None) -> dict:
 
 
 def verify_owner(client: Herdr, role: dict, project: Path) -> dict:
+    if getattr(client, "host", None) == "orca":
+        return client.verify_owner(role, project)
     agent = client.json("agent", "get", role["pane_id"])["agent"]
     if agent.get("pane_id") != role["pane_id"] or agent.get("agent") != role["harness"]:
         raise HerdrError("Recorded pane occupant changed; explicit owner handoff is required")
@@ -174,3 +176,25 @@ def verify_owner(client: Herdr, role: dict, project: Path) -> dict:
         raise HerdrError("Foreground process changed; inspect ownership before rebinding")
     return {**role, **live, "native_session_id": native or role.get("native_session_id"),
             "status": agent.get("agent_status", "unknown"), "name": agent.get("name", role.get("name"))}
+
+
+def read_screen(client, target: str) -> str:
+    if getattr(client, "host", None) == "orca":
+        screen = client.read_screen(target)
+        if screen.get("draft"):
+            # Keep a pending UI composer draft visible to the same guard.
+            return "› " + screen["draft"]
+        return "\n".join(screen.get("tail", []))
+    return client.run("agent", "read", target, "--source", "visible", "--lines", "24")
+
+
+def send_prompt(client, target: str, text: str) -> dict:
+    if getattr(client, "host", None) == "orca":
+        return client.send_prompt(target, text)
+    return client.json("agent", "prompt", target, text)
+
+
+def notify(client, title: str, text: str) -> dict:
+    if getattr(client, "host", None) == "orca":
+        return client.notice(title, text)
+    return client.json("notification", "show", title, "--body", text, "--sound", "none")

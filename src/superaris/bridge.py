@@ -16,6 +16,7 @@ from .client import Herdr, HerdrError, verify_owner
 from .delivery import deliver
 from .runtime import binding
 from .state import directory, read, write
+from .hosts import client_for_binding, selected_host
 
 
 def _pending_signals(project: Path, client: Herdr) -> list[dict]:
@@ -107,7 +108,7 @@ def _listen(project: Path, binary: str, duration: float | None, interval: float,
     bound = binding(project)
     if not bound.get("session") or not bound.get("roles", {}).get("main"):
         raise ValueError("No bound main owner for this project; start or bind the project first")
-    client = Herdr(bound["session"], binary)
+    client = client_for_binding(bound, project, binary, herdr_factory=Herdr)
     state_path = directory(project) / "bridge.json"
     state = read(state_path, {"delivered": {}})
     delivered = state.setdefault("delivered", {})
@@ -126,7 +127,7 @@ def _listen(project: Path, binary: str, duration: float | None, interval: float,
     def reconcile() -> list[dict]:
         nonlocal bound
         current = binding(project)
-        if current.get("session") != client.session:
+        if current.get("session") != client.session or selected_host(current) != selected_host(bound):
             raise HerdrError("Project binding changed; listener stopped without transferring ownership")
         roles = current.get("roles", {})
         if not roles.get("main"):
@@ -210,6 +211,8 @@ def _listen(project: Path, binary: str, duration: float | None, interval: float,
                 # Unknown send outcomes require reconciliation, never an automatic
                 # second input submission in this invocation.
                 attempts[signal_id].update(status="unknown", error=str(exc))
+                if getattr(exc, "response", None):
+                    attempts[signal_id]["native_response"] = exc.response
                 write(state_path, state)
                 result.update(reason="unknown_requires_inspection", error=str(exc), pending_unknown=signal_id)
                 return False
@@ -233,6 +236,8 @@ def _listen(project: Path, binary: str, duration: float | None, interval: float,
                 deferred.pop(signal_id, None)
             delivered[signal_id] = {"signal": dict(signal), "pane_id": role["pane_id"],
                                     "delivery": receipt["delivery"]}
+            if getattr(client, "host", None) == "orca":
+                delivered[signal_id]["receipt"] = receipt
             del attempts[signal_id]
             write(state_path, state)
             if signal.get("context_role") and receipt["delivery"] == "submitted":

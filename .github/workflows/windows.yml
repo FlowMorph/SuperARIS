@@ -22,7 +22,7 @@ jobs:
       - name: Native process, pipe, runtime and resource contracts
         run: |
           New-Item -ItemType Directory -Force windows-evidence | Out-Null
-          python -m pytest -q --basetemp=windows-evidence/pytest tests/test_windows_platform.py tests/test_windows_runtime.py tests/test_workbench_tasks.py tests/test_workbench_client.py tests/test_workbench_context.py tests/test_installed_package.py
+          python -m pytest -q --basetemp=windows-evidence/pytest tests/test_windows_platform.py tests/test_windows_runtime.py tests/test_workbench_tasks.py tests/test_workbench_client.py tests/test_workbench_context.py tests/test_installed_package.py tests/test_orca_hosts.py tests/test_orca_context.py tests/test_orca_runtime.py tests/test_orca_transport.py tests/test_orca_receiver.py tests/test_orca_wizard.py
       - name: Isolated installed consumer and pinned ARIS helper
         if: ${{ !cancelled() }}
         run: python scripts/verify_install.py 'dist/*.whl'

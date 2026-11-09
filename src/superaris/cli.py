@@ -18,6 +18,10 @@ class _ArgumentParser(argparse.ArgumentParser):
         raw = list(sys.argv[1:] if args is None else args)
         parsed = super().parse_args(raw, namespace)
         if parsed.command == "start" and parsed.project is not None:
+            if getattr(parsed, "orca_bin", None) and any(separator in parsed.orca_bin for separator in ("/", "\\")):
+                # Resolve explicit paths in the invoking cwd, before execution
+                # changes to the project or pending startup is resumed elsewhere.
+                parsed.orca_bin = str(Path(parsed.orca_bin).expanduser().resolve())
             # Recovery can be opened from another cwd. Keep the wizard's
             # canonical prefix and serialize the parsed options unchanged.
             canonical = ["start", str(parsed.project.expanduser().resolve())]
@@ -53,6 +57,8 @@ def make_plan(args: argparse.Namespace) -> dict:
         raise ValueError(f"project directory does not exist: {project}")
     from .state import directory, read
     current = read(directory(project) / "launch.json", {})
+    from .hosts import selected_host
+    host = selected_host(current, getattr(args, "host", None))
     pending = current.get("pending_start", {})
     remembered = ({item["role"]: item for item in pending.get("roles", [])}
                   if pending else current.get("roles", {}))
@@ -75,7 +81,7 @@ def make_plan(args: argparse.Namespace) -> dict:
     if any(kind not in {"codex", "claude", "agy"} for kind in roles.values()):
         raise ValueError("supported harnesses: codex, claude, agy")
     return {
-        "mode": "plan", "project": str(project), "session": args.session,
+        "mode": "plan", "project": str(project), "session": args.session, "host": host,
         "preset": preset, "task": args.task or inherited.get("main", {}).get("task") or inherited.get("main", {}).get("inputs", {}).get("task") or "Recover this project and continue only its already authorized work.",
         "skills": args.skill or ["project-agent"],
         "roles": [{"role": role, "harness": kind, "model": models.get(role),
@@ -101,6 +107,8 @@ def parser(prog: str = "superaris") -> argparse.ArgumentParser:
     s.add_argument("--name", help="readable new workbench name; existing owners are not renamed")
     s.add_argument("--plan", action="store_true", help="offline preview; no writes or processes")
     s.add_argument("--session", default="aris", help="explicit local Herdr session (default: aris)")
+    s.add_argument("--host", choices=("herdr", "orca"), help="new-project workbench; existing projects keep their original host")
+    s.add_argument("--orca-bin", help="explicit official Orca CLI launcher; otherwise discover the installed app")
     s.add_argument("--owner", help="explicit existing main agent name/pane to adopt after verification")
     s.add_argument("--preset", choices=PRESETS, help="new-team mapping (default: codex); reconnect preserves the recorded team")
     s.add_argument("--role", action="append", default=[], metavar="ROLE=HARNESS")
@@ -285,7 +293,7 @@ def main(argv: list[str] | None = None, *, prog: str = "superaris") -> int:
                 with launch_lock(Path(plan["project"])):
                     current = binding(Path(plan["project"])) or {
                         "project": plan["project"], "session": plan["session"],
-                        "preset": plan["preset"], "roles": {},
+                        "preset": plan["preset"], "roles": {}, "host": plan["host"],
                     }
                     current["ui_language"] = args.ui_language
                     save_binding(Path(plan["project"]), current)

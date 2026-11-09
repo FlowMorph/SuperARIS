@@ -56,7 +56,7 @@ Reopen a running team to continue its conversations, or give a new session the p
 
 ## Install and open
 
-Requires Python 3.10+ on macOS, Linux or Windows, [Herdr](https://herdr.dev), and your chosen native CLIs (`codex`, `claude`, `agy`) with model access configured.
+Requires Python 3.10+ on macOS, Linux or Windows, [Herdr](https://herdr.dev) (default) or [optional Orca Terminal v1](docs/ORCA.md), and your chosen native CLIs (`codex`, `claude`, `agy`) with model access configured.
 
 ```bash
 pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'
