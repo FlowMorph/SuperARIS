@@ -2,7 +2,15 @@
 
 **SuperARIS — Your personal research agent with ARIS (Auto Research In Sleep, ~20k stars), powered by a team of agents.**
 
-[![Homepage](https://img.shields.io/badge/Homepage-Live%20demo-0969da?style=flat)](https://wanshuiyin.github.io/SuperARIS/) [![Install](https://img.shields.io/badge/Install-Quick%20start-2da44e?style=flat)](#quick-start) [![Guides](https://img.shields.io/badge/Guides-Docs-0d9488?style=flat)](#guides) [![Preview v0.1.0](https://img.shields.io/badge/Preview-v0.1.0-6e7781?style=flat)](pyproject.toml) [![简体中文](https://img.shields.io/badge/Language-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-8250df?style=flat)](README_CN.md)<br>[![Built on ARIS](https://img.shields.io/badge/Built%20on-ARIS-455299?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite%20ARIS-BibTeX-556b52?style=flat)](#cite-aris) [![MIT License](https://img.shields.io/badge/License-MIT-555555?style=flat)](LICENSE) [![Join Community](https://img.shields.io/badge/Join%20Community-ARIS-07a65a?style=flat)](#community)
+[![Homepage](https://img.shields.io/badge/Homepage-Live%20demo-0969da?style=flat)](https://wanshuiyin.github.io/SuperARIS/) [![Quick Start](https://img.shields.io/badge/Quick%20Start-Herdr%20%2B%20Orca-2da44e?style=flat)](#quick-start) [![Guides](https://img.shields.io/badge/Guides-Docs-0d9488?style=flat)](#guides) [![Preview v0.1.0](https://img.shields.io/badge/Preview-v0.1.0-6e7781?style=flat)](pyproject.toml) [![简体中文](https://img.shields.io/badge/Language-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-8250df?style=flat)](README_CN.md)<br>[![Built on ARIS](https://img.shields.io/badge/Built%20on-ARIS-455299?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite%20ARIS-BibTeX-556b52?style=flat)](#cite-aris) [![MIT License](https://img.shields.io/badge/License-MIT-555555?style=flat)](LICENSE) [![Join Community](https://img.shields.io/badge/Join%20Community-ARIS-07a65a?style=flat)](#community)
+
+[![Research teamwork in action — English animated preview](assets/demo-en.gif)](https://wanshuiyin.github.io/SuperARIS/media/demo-en.mp4)
+
+**[▶ Watch the full 1080p demo · ≈21 seconds](https://wanshuiyin.github.io/SuperARIS/media/demo-en.mp4)**
+
+*Animated preview · click to play the full video. Illustrative project and data.*
+
+**Orca multi-model team:** [Interactive homepage](https://wanshuiyin.github.io/SuperARIS/?host=orca#workbench) · [English video](https://wanshuiyin.github.io/SuperARIS/media/orca-multi-demo-en.mp4) · [中文视频](https://wanshuiyin.github.io/SuperARIS/media/orca-multi-demo-zh.mp4). The [single-model team (3 Codex agents)](https://wanshuiyin.github.io/SuperARIS/orca-demo/?team=codex&lang=en) and its original [English](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-en.mp4)/[中文](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-zh.mp4) videos remain available.
 
 ## Quick Start
 
@@ -23,14 +31,6 @@ For an explicit start, open a new project's directory and choose one workbench:
 | **Orca (optional)** | `superaris start . --host orca` | [Orca setup](docs/ORCA.md) |
 
 For Orca, install and open the [official app](https://www.onorca.dev/) first; if its CLI is unavailable, register it in **Settings → General → Orca CLI**. Reopening an existing project keeps its recorded workbench and team. [More installation options ↓](#install-and-open)
-
-[![Research teamwork in action — English animated preview](assets/demo-en.gif)](https://wanshuiyin.github.io/SuperARIS/media/demo-en.mp4)
-
-**[▶ Watch the full 1080p demo · ≈21 seconds](https://wanshuiyin.github.io/SuperARIS/media/demo-en.mp4)**
-
-*Animated preview · click to play the full video. Illustrative project and data.*
-
-**Orca multi-model team:** [Interactive homepage](https://wanshuiyin.github.io/SuperARIS/?host=orca#workbench) · [English video](https://wanshuiyin.github.io/SuperARIS/media/orca-multi-demo-en.mp4) · [中文视频](https://wanshuiyin.github.io/SuperARIS/media/orca-multi-demo-zh.mp4). The [single-model team (3 Codex agents)](https://wanshuiyin.github.io/SuperARIS/orca-demo/?team=codex&lang=en) and its original [English](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-en.mp4)/[中文](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-zh.mp4) videos remain available.
 
 Discuss a research goal with your personal agent. It organizes a persistent team, delegates work, checks incoming results, and keeps track of what should happen next. Join any teammate's session to explore an idea, refine a draft, or take over.
 
