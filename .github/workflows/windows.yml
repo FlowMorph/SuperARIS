@@ -28,15 +28,18 @@ jobs:
         run: python scripts/verify_install.py 'dist/*.whl'
       - name: Official Herdr Windows distribution
         if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           $release = Invoke-RestMethod 'https://api.github.com/repos/herdrdev/herdr/releases/tags/v0.9.5'
           $asset = $release.assets | Where-Object name -eq 'herdr-windows-x86_64.zip'
-          Invoke-WebRequest $asset.browser_download_url -OutFile "$env:RUNNER_TEMP/herdr.zip"
+          $headers = @{ Accept = 'application/octet-stream'; Authorization = "Bearer $env:GH_TOKEN" }
+          Invoke-WebRequest $asset.url -Headers $headers -OutFile "$env:RUNNER_TEMP/herdr.zip"
           Expand-Archive "$env:RUNNER_TEMP/herdr.zip" "$env:RUNNER_TEMP/herdr"
           $exe = (Get-ChildItem "$env:RUNNER_TEMP/herdr" -Recurse -Filter herdr.exe | Select-Object -First 1).FullName
           "HERDR_SMOKE_BIN=$exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Real Herdr, named pipe, ConPTY and no-model report
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.HERDR_SMOKE_BIN != '' }}
         run: python scripts/windows_herdr_smoke.py --herdr-bin "$env:HERDR_SMOKE_BIN" --output windows-evidence/herdr-smoke.json
       - uses: actions/upload-artifact@v4
         if: always()
