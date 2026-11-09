@@ -330,12 +330,13 @@ def test_legacy_copied_prefix_uses_parent_response_provenance(logs):
 @pytest.mark.parametrize("current", [False, True])
 def test_independent_equal_requests_in_fork_and_other_sessions_survive(logs, current):
     project, wb, cc, cx, roles, run = logs
-    def events(sid, at):
-        return [structured(sid, "response-1", at=at), codex(at=at)] if current else [codex(at=at)]
+    def events(sid, at, total=120, output=5):
+        return ([structured(sid, "response-1", total, output, at=at), codex(total, output, at=at)]
+                if current else [codex(total, output, at=at)])
     jsonl(cx / "parent.jsonl", [meta("cx-engineer", project), *events("cx-engineer", NOW - 60)])
-    # A fork with no copied usage prefix can make a new equal-cost request.
+    # A new equal-cost fork request advances the inherited cumulative total.
     jsonl(cx / "child.jsonl", [meta("child", project, forked_from_id="cx-engineer"),
-                               *events("child", NOW - 20)])
+                               *events("child", NOW - 20, 240, 10)])
     # Another session may have identical counters and even the same log timestamp.
     jsonl(cx / "other.jsonl", [meta("other", project), *events("other", NOW - 60)])
     result = run()
@@ -364,3 +365,22 @@ def test_copied_fork_prefix_across_multiple_generations(logs):
     jsonl(cx / "a-grandchild.jsonl", [meta("grandchild", project, forked_from_id="child"), first,
                                     second, codex(360, 15)])
     assert row(run(), "engineer", "codex")["requests"] == 3
+
+
+@pytest.mark.parametrize("current", [False, True])
+def test_native_fork_rewritten_timestamps_use_original_usage_time(logs, current):
+    project, wb, cc, cx, roles, run = logs
+    def events(sid, response, at, total=120, output=5):
+        old = codex(total, output, at=at)
+        return [structured(sid, response, total, output, at=at), old] if current else [old]
+    jsonl(cx / "parent.jsonl", [meta("cx-engineer", project),
+                               *events("cx-engineer", "r1", NOW - 100)])
+    jsonl(cx / "child.jsonl", [meta("child", project, forked_from_id="cx-engineer"),
+                              *events("cx-engineer", "r1", NOW - 50),
+                              *events("child", "r2", NOW - 20, 240, 10)])
+    usage = row(run(), "engineer", "codex")
+    assert usage["requests"] == 2
+    assert usage["raw_input_tokens"] == 240
+    usage = row(run(since=NOW - 60), "engineer", "codex")
+    assert usage["requests"] == 1
+    assert usage["raw_input_tokens"] == 120

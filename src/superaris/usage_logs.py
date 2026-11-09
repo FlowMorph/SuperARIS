@@ -245,8 +245,6 @@ def _reconcile_codex(sessions: list[Session]):
             if sample.get("structured"):
                 continue  # its original thread/response identity is already explicit
             matches = [p.samples[identity] for p in parents if identity in p.samples
-                       and sample["at"] is not None
-                       and p.samples[identity]["at"] == sample["at"]
                        and p.samples[identity]["values"] == sample["values"]]
             if not matches:
                 break
@@ -254,11 +252,28 @@ def _reconcile_codex(sessions: list[Session]):
             if len(keys) != 1:
                 break
             sample["record_key"] = next(iter(keys))
+            sample["at"] = matches[0]["at"]
+            sample["interval_start"] = matches[0].get("interval_start")
         visiting.remove(marker)
         resolved.add(marker)
 
     for session in sessions:
         inherit(session)
+    # The native writer restamps copied RolloutItems. Resolve time from the
+    # original response's own thread before collect applies the time window.
+    originals: dict[tuple, list[dict]] = {}
+    for session in sessions:
+        for sample in session.samples.values():
+            key = sample["record_key"]
+            origin_sid = key[2] if key[1] == "response" else key[1]
+            if session.sid == origin_sid and sample["at"] is not None:
+                originals.setdefault(key, []).append(sample)
+    for session in sessions:
+        for sample in session.samples.values():
+            if not sample.get("structured"):
+                continue
+            source = originals.get(sample["record_key"], [])
+            sample["at"] = min(s["at"] for s in source) if source else None
     for session in sessions:
         session.samples = {k: s for k, s in session.samples.items() if not s.get("paired")}
 
