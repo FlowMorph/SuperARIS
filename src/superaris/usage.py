@@ -156,8 +156,10 @@ def collect(project: Path, *, claude_root: Path | None = None, codex_root: Path 
                 bucket["_partial"] = totals[session.client]["_partial"] = True
                 diag.add("cumulative_delta_crosses_range_start", session.client, session.file, sample["line"])
                 continue
-            # Claude消息ID在分叉拷贝间保持稳定；Codex累计身份仅在本会话内可比较。
-            record_key = (session.client, identity) if session.client == "claude" else (*key, identity)
+            # Codex response provenance survives copied forks; legacy counters are
+            # shared only for an exact inherited prefix, never globally by value.
+            record_key = ((session.client, identity) if session.client == "claude"
+                          else sample["record_key"])
             records.setdefault(record_key, []).append((owner, session, sample))
     for copies in records.values():
         client = copies[0][1].client

@@ -140,7 +140,7 @@ def test_codex_baseline_before_start_then_last_is_valid_but_delta_crossing_start
 def test_explicit_child_link_and_unlinked_history(logs):
     project, wb, cc, cx, roles, run = logs
     jsonl(cx / "engineer.jsonl", [meta("cx-engineer", project), codex()])
-    jsonl(cx / "child.jsonl", [meta("child", project, forked_from_id="cx-engineer"), codex()])
+    jsonl(cx / "child.jsonl", [meta("child", project, parent_thread_id="cx-engineer"), codex()])
     jsonl(cx / "old.jsonl", [meta("old", project), codex()])
     result = run()
     assert row(result, "engineer", "codex")["requests"] == 2
@@ -269,3 +269,98 @@ def test_known_role_and_metadata_only_role_do_not_make_partial_total_complete(lo
     assert result["clients"]["claude"]["input_tokens"] is None
     assert result["clients"]["claude"]["observed"]["input_tokens"] == 100
     assert row(result, "main", "claude")["share"] is None
+
+
+def structured(sid="cx-engineer", response="response-1", total=120, output=5, at=NOW - 20):
+    legacy = codex(total, output, at=at)
+    usage = {**legacy["payload"]["info"]["last_token_usage"],
+             "cache_write_input_tokens": 0, "reasoning_output_tokens": 0, "total_tokens": 125}
+    cumulative = {**legacy["payload"]["info"]["total_token_usage"],
+                  "cache_write_input_tokens": 0, "reasoning_output_tokens": 0,
+                  "total_tokens": total + output}
+    return {"type": "token_usage_record", "timestamp": stamp(at), "ordinal": 1,
+            "payload": {"thread_id": sid, "turn_id": "turn-1", "session_id": "runtime-1",
+                        "root_turn_id": "turn-1", "response_id": response, "usage": usage,
+                        "turn_token_usage": cumulative, "thread_token_usage": cumulative}}
+
+
+@pytest.mark.parametrize("formats", ["structured", "structured-first", "legacy-first"])
+def test_current_codex_response_and_legacy_pair_count_once(logs, formats):
+    project, wb, cc, cx, roles, run = logs
+    current = structured()
+    events = [current, current] if formats == "structured" else (
+        [current, codex(), codex()] if formats == "structured-first" else [codex(), current])
+    jsonl(cx / "engineer.jsonl", [meta("cx-engineer", project), *events])
+    result = run()
+    usage = row(result, "engineer", "codex")
+    assert usage["requests"] == 1
+    assert usage["raw_input_tokens"] == 120
+    assert usage["equivalent_tokens"] == 127
+    assert usage["share"] == 1
+    assert "usage_schema_unknown" not in codes(result)
+
+
+@pytest.mark.parametrize("current", [False, True])
+def test_copied_fork_prefix_not_billed_again_and_new_equal_request_retained(logs, current):
+    project, wb, cc, cx, roles, run = logs
+    first, second = codex(at=NOW - 60), codex(240, 10, at=NOW - 20)
+    prefix = [structured(at=NOW - 60), first] if current else [first]
+    new = [structured("child", "response-2", 240, 10), second] if current else [second]
+    jsonl(cx / "parent.jsonl", [meta("cx-engineer", project), *prefix])
+    jsonl(cx / "child.jsonl", [meta("child", project, forked_from_id="cx-engineer"), *prefix, *new])
+    usage = row(run(), "engineer", "codex")
+    assert usage["requests"] == 2
+    assert usage["raw_input_tokens"] == 240
+    assert usage["equivalent_tokens"] == 254
+    # Range selection does not charge the out-of-window inherited request.
+    usage = row(run(since=NOW - 40), "engineer", "codex")
+    assert usage["requests"] == 1
+    assert usage["raw_input_tokens"] == 120
+
+
+def test_legacy_copied_prefix_uses_parent_response_provenance(logs):
+    project, wb, cc, cx, roles, run = logs
+    first = codex(at=NOW - 60)
+    jsonl(cx / "parent.jsonl", [meta("cx-engineer", project), structured(at=NOW - 60), first])
+    jsonl(cx / "child.jsonl", [meta("child", project, forked_from_id="cx-engineer"), first,
+                               codex(240, 10)])
+    assert row(run(), "engineer", "codex")["requests"] == 2
+
+
+@pytest.mark.parametrize("current", [False, True])
+def test_independent_equal_requests_in_fork_and_other_sessions_survive(logs, current):
+    project, wb, cc, cx, roles, run = logs
+    def events(sid, at):
+        return [structured(sid, "response-1", at=at), codex(at=at)] if current else [codex(at=at)]
+    jsonl(cx / "parent.jsonl", [meta("cx-engineer", project), *events("cx-engineer", NOW - 60)])
+    # A fork with no copied usage prefix can make a new equal-cost request.
+    jsonl(cx / "child.jsonl", [meta("child", project, forked_from_id="cx-engineer"),
+                               *events("child", NOW - 20)])
+    # Another session may have identical counters and even the same log timestamp.
+    jsonl(cx / "other.jsonl", [meta("other", project), *events("other", NOW - 60)])
+    result = run()
+    assert row(result, "engineer", "codex")["requests"] == 2
+    assert result["clients"]["codex"]["requests"] == 3
+    assert result["clients"]["codex"]["raw_input_tokens"] == 360
+
+
+def test_structured_response_ids_keep_distinct_zero_usage_requests(logs):
+    project, wb, cc, cx, roles, run = logs
+    events = [structured(response=r) for r in ("zero-1", "zero-2")]
+    for event in events:
+        for name in ("usage", "turn_token_usage", "thread_token_usage"):
+            event["payload"][name] = {k: 0 for k in event["payload"][name]}
+    jsonl(cx / "engineer.jsonl", [meta("cx-engineer", project), *events])
+    usage = row(run(), "engineer", "codex")
+    assert usage["requests"] == 2
+    assert usage["equivalent_tokens"] == 0
+
+
+def test_copied_fork_prefix_across_multiple_generations(logs):
+    project, wb, cc, cx, roles, run = logs
+    first, second = codex(at=NOW - 60), codex(240, 10, at=NOW - 40)
+    jsonl(cx / "z-parent.jsonl", [meta("cx-engineer", project), first])
+    jsonl(cx / "b-child.jsonl", [meta("child", project, forked_from_id="cx-engineer"), first, second])
+    jsonl(cx / "a-grandchild.jsonl", [meta("grandchild", project, forked_from_id="child"), first,
+                                    second, codex(360, 15)])
+    assert row(run(), "engineer", "codex")["requests"] == 3

@@ -59,6 +59,7 @@ class Session:
     samples: dict[str, dict] = field(default_factory=dict)
     incomplete: bool = False
     ambiguous: bool = False
+    forked_from: str | None = None
 
 
 def _tokens(usage: dict, client: str) -> dict:
@@ -133,6 +134,8 @@ def _codex(event: dict, session: Session, at: float | None, line: int, diag: Dia
                 session.ambiguous = True
                 diag.add("session_identity_conflict", "codex", session.file, line)
             session.sid = sid
+        if isinstance(payload.get("forked_from_id"), str):
+            session.forked_from = payload["forked_from_id"]
         for key in ("forked_from_id", "parent_thread_id", "parent_session_id"):
             if isinstance(payload.get(key), str) and payload[key]:
                 session.parents.add(payload[key])
@@ -143,6 +146,21 @@ def _codex(event: dict, session: Session, at: float | None, line: int, diag: Dia
             session.parents.add(spawn["parent_thread_id"])
         if isinstance(payload.get("cwd"), str):
             session.cwds.add(payload["cwd"])
+        return
+    if event.get("type") == "token_usage_record":
+        thread, response, usage = (payload.get(k) for k in ("thread_id", "response_id", "usage"))
+        if not (isinstance(thread, str) and thread and isinstance(response, str) and response
+                and isinstance(usage, dict)):
+            session.incomplete = True
+            diag.add("usage_schema_unknown", "codex", session.file, line)
+            return
+        identity = "response:" + json.dumps([thread, response])
+        session.samples.setdefault(identity, {
+            "at": at, "values": {"requests": 1, **_tokens(usage, "codex")}, "line": line,
+            "record_key": ("codex", "response", thread, response),
+            "pair": _codex_pair(payload.get("thread_token_usage"), usage),
+            "structured": True,
+        })
         return
     if event.get("type") != "event_msg" or payload.get("type") != "token_count":
         return
@@ -184,7 +202,65 @@ def _codex(event: dict, session: Session, at: float | None, line: int, diag: Dia
         diag.add("codex_cumulative_baseline_missing_or_reset", "codex", session.file, line)
         return
     session.samples.setdefault(identity, {"at": at, "values": values, "line": line,
-                                          "interval_start": previous_at if not isinstance(last, dict) else None})
+                                          "interval_start": previous_at if not isinstance(last, dict) else None,
+                                          "pair": _codex_pair(total, last)})
+
+
+def _codex_pair(total, last):
+    """Match the two native representations, not unrelated equal-cost requests."""
+    keys = ("input_tokens", "cached_input_tokens", "output_tokens")
+    if not isinstance(total, dict) or not isinstance(last, dict):
+        return None
+    values = tuple(number(source.get(k)) for source in (total, last) for k in keys)
+    return values if all(v is not None for v in values) else None
+
+
+def _reconcile_codex(sessions: list[Session]):
+    # Keep the legacy entries until copied-prefix provenance has been resolved:
+    # a child may contain an old representation of a parent's structured response.
+    by_sid: dict[str, list[Session]] = {}
+    for session in sessions:
+        by_sid.setdefault(session.sid, []).append(session)
+        structured = {s["pair"]: s for s in session.samples.values()
+                      if s.get("structured") and s.get("pair") is not None}
+        for identity, sample in session.samples.items():
+            sample.setdefault("record_key", ("codex", session.sid, identity))
+            if not sample.get("structured") and sample.get("pair") in structured:
+                sample["record_key"] = structured[sample["pair"]]["record_key"]
+                sample["paired"] = True
+
+    resolved, visiting = set(), set()
+
+    def inherit(session):
+        marker = id(session)
+        if marker in resolved or marker in visiting:
+            return
+        visiting.add(marker)
+        parents = by_sid.get(session.forked_from, [])
+        for parent in parents:
+            inherit(parent)
+        # Only an exact observed prefix of an explicitly copied fork is inherited.
+        # Equal counters elsewhere, or independent parent/child requests, stay distinct.
+        for identity, sample in session.samples.items():
+            if sample.get("structured"):
+                continue  # its original thread/response identity is already explicit
+            matches = [p.samples[identity] for p in parents if identity in p.samples
+                       and sample["at"] is not None
+                       and p.samples[identity]["at"] == sample["at"]
+                       and p.samples[identity]["values"] == sample["values"]]
+            if not matches:
+                break
+            keys = {m["record_key"] for m in matches}
+            if len(keys) != 1:
+                break
+            sample["record_key"] = next(iter(keys))
+        visiting.remove(marker)
+        resolved.add(marker)
+
+    for session in sessions:
+        inherit(session)
+    for session in sessions:
+        session.samples = {k: s for k, s in session.samples.items() if not s.get("paired")}
 
 
 def scan(root: Path, client: str, diag: Diagnostics, until: float) -> tuple[list[Session], dict]:
@@ -237,7 +313,8 @@ def scan(root: Path, client: str, diag: Diagnostics, until: float) -> tuple[list
                         session.cwds.add(event["cwd"])
                     if at is not None and at >= until and event.get("type") != "session_meta":
                         continue
-                    if event.get("type") == "token_usage_record" or "usage" in event and event.get("type") != "assistant":
+                    if ("usage" in event and event.get("type") != "assistant"
+                            and not (client == "codex" and event.get("type") == "token_usage_record")):
                         session.incomplete = True
                         diag.add("usage_schema_unknown", client, relative, line_no)
                     if client == "claude":
@@ -252,6 +329,8 @@ def scan(root: Path, client: str, diag: Diagnostics, until: float) -> tuple[list
         if session.incomplete:
             source["status"] = "partial"
         sessions.append(session)
+    if client == "codex":
+        _reconcile_codex(sessions)
     source["files"] = len(sessions)
     if not sessions and source["status"] == "observed":
         source["status"] = "empty"

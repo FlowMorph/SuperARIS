@@ -16,7 +16,7 @@ superaris usage /path/to/project --claude-root /path/to/claude/projects --codex-
 
 The default range is the previous 24 hours, with `[since, until)` boundaries. ISO timestamps require a timezone, `--since` replaces the lookback start, and `until` must be at or before the current time. Default roots are `.claude/projects` and `.codex/sessions` below the user's home directory; explicit roots support custom locations and offline fixtures. The scanner reads JSONL files and skips symlink files.
 
-Text follows the binding's `ui_language`, defaulting to Chinese; `--lang zh|en` overrides it. JSON uses stable English keys and status codes. See [[src/superaris/cli.py|CLI]] for the lazy command entry, [[src/superaris/usage.py|usage reports]] for attribution and output, and [[src/superaris/usage_logs.py|native log parsing]] for supported schemas and deduplication.
+Text follows the binding's `ui_language`, defaulting to Chinese; `--lang zh|en` overrides it. JSON uses stable English keys and status codes. See [CLI](../src/superaris/cli.py) for the lazy command entry, [usage reports](../src/superaris/usage.py) for attribution and output, and [native log parsing](../src/superaris/usage_logs.py) for supported schemas and deduplication.
 
 ### Attribution and coverage
 
@@ -31,7 +31,7 @@ Coverage describes local observations; completeness of the full usage ledger rem
 There are three client/accounting rules:
 
 1. Claude deduplicates assistant `message.id` values across streaming snapshots and restored copies. Repeated snapshots retain the greatest observed value per field, with one request per message. Input, cache read and cache creation are separate counts; their weights are 1, 0.1 and 1.25, with output weighted 5. Conflicting owners of a duplicated message remain unattributed.
-2. Codex reads `event_msg.payload.type=token_count`. When `last_token_usage` exists, it uses last and the cumulative identity for deduplication. Otherwise only a verifiable difference between cumulative snapshots contributes tokens, while request count remains unknown. A missing baseline, counter regression, range-crossing delta or missing stable identity remains unknown. Raw input includes cached input; normalized input subtracts cached input. Independent cache writes are `null` when absent; Codex equivalent tokens use the supported input/cache-read/output categories.
+2. Codex reads structured `token_usage_record` responses as well as legacy `event_msg.payload.type=token_count`. Structured records use their original thread/response IDs; matching cumulative and per-response usage reconciles the paired legacy representation without counting it twice. An exact copied usage prefix is shared only along an explicit `forked_from_id` link, preserving independent equal-cost requests. For legacy-only records, `last_token_usage` and the cumulative identity provide deduplication. Otherwise only a verifiable difference between cumulative snapshots contributes tokens, while request count remains unknown. A missing baseline, counter regression, range-crossing delta or missing stable identity remains unknown. Raw input includes cached input; normalized input subtracts cached input. Independent cache writes are `null` when absent; Codex equivalent tokens use the supported input/cache-read/output categories.
 3. Each client and role reports requests, raw/normalized input, cache read/write, output, equivalent tokens and coverage. `share` is the role's fraction of project observations within that client, including unattributed usage in the denominator. `all_clients_share` covers verifiable cross-client observations. Missing or zero denominators produce `null` shares. Weights express relative contribution, with billing coverage unspecified.
 
 A request/usage snapshot belongs to its local log timestamp. Only snapshots before the upper boundary participate; exact per-token occurrence times cannot be reconstructed. Ambiguous cumulative differences are retained as unknown.
@@ -51,7 +51,7 @@ This synthetic excerpt contains one Claude request and its corresponding equival
 }
 ```
 
-Synthetic tests in [[tests/test_usage.py|usage tests]] cover attribution, descendants, deduplication, missing/damaged data, genuine zero, range boundaries, bilingual CLI and read-only execution. The established upstream test evidence and this command's focused evidence are recorded separately. Navigation starts at [[docs/index|documentation index]].
+Synthetic tests in [usage tests](../tests/test_usage.py) cover attribution, descendants, deduplication, missing/damaged data, genuine zero, range boundaries, bilingual CLI and read-only execution. The established upstream test evidence and this command's focused evidence are recorded separately. Navigation starts at [documentation index](index.md).
 
 ## 中文
 
@@ -61,7 +61,7 @@ Synthetic tests in [[tests/test_usage.py|usage tests]] cover attribution, descen
 
 使用上面的通用命令示例；默认回看24小时，边界为 `[since, until)`。时间须带时区，`--since` 覆盖起点，结束时间不晚于当前时间；默认日志根目录在用户主目录的 `.claude/projects`、`.codex/sessions`，显式目录支持自定义位置和离线夹具，扫描JSONL并跳过符号链接文件。
 
-文本沿用绑定中的界面语言，默认中文，`--lang zh|en` 可覆盖；JSON使用固定英文键和状态码。实现入口为 [[src/superaris/cli.py|CLI惰性分支]]、[[src/superaris/usage.py|归属与报告]] 和 [[src/superaris/usage_logs.py|原生日志解析]]。
+文本沿用绑定中的界面语言，默认中文，`--lang zh|en` 可覆盖；JSON使用固定英文键和状态码。实现入口为 [CLI惰性分支](../src/superaris/cli.py)、[归属与报告](../src/superaris/usage.py) 和 [原生日志解析](../src/superaris/usage_logs.py)。
 
 ### 归属与覆盖
 
@@ -74,7 +74,7 @@ Synthetic tests in [[tests/test_usage.py|usage tests]] cover attribution, descen
 有以下三类口径：
 
 1. Claude按消息ID及恢复副本去重，流式快照逐字段保留已观测最大值，每消息一次请求；输入、缓存读、缓存写和输出权重分别为1、0.1、1.25、5，重复消息有归属竞争时列未归属。
-2. Codex有last时用last并按累计身份去重；仅有total时用可核实差量，请求数未知。原始input包含cached，归一化input先扣除cached；未提供的独立缓存写为null，等效值按已提供三类计算。缺基线、回退、跨起点或缺身份时保留未知。
+2. Codex支持结构化 `token_usage_record` 和旧 `token_count`；按原线程/响应ID识别结构化请求，以匹配的累计及单次用量协调双记录，只计一次。仅沿明确 `forked_from_id` 排除与父日志完全匹配的继承用量前缀，独立等量请求仍保留。旧格式有last时用last并按累计身份去重；仅有total时用可核实差量，请求数未知。原始input包含cached，归一化input先扣除cached；未提供的独立缓存写为null，等效值按已提供三类计算。缺基线、回退、跨起点或缺身份时保留未知。
 3. 每角色/客户端展示请求、原始及归一输入、缓存读写、输出、等效值和覆盖状态；`share`为同客户端项目内占比，`all_clients_share`为可核实的跨客户端占比。分母未知或为零时为null，词元权重只表达相对贡献。
 
 消息/快照归入本地记录时间所在范围，只采用结束边界前的数据；逐词元真实时间无法还原，无法拆分的累计差量保持未知。
@@ -83,4 +83,4 @@ Synthetic tests in [[tests/test_usage.py|usage tests]] cover attribution, descen
 
 **输入仅为会话日志及启动绑定，输出省略对话正文。** 命令不访问认证文件、凭据或进程环境，不发网络请求、启动客户端/Herdr、改写日志/绑定，也没有新增运行依赖和后台采集。英文节给出的JSON摘录为合成数据，Claude示例等效值为 `100+20×0.1+8×1.25+6×5=142`。
 
-合成夹具见 [[tests/test_usage.py|用量测试]]，覆盖精确归属、子会话、去重、缺失/损坏、真实零、时间边界和双语只读CLI。原始上游验证与本次受影响入口证据分别记录；模块导航见 [[docs/index|文档入口]]。
+合成夹具见 [用量测试](../tests/test_usage.py)，覆盖精确归属、子会话、去重、缺失/损坏、真实零、时间边界和双语只读CLI。原始上游验证与本次受影响入口证据分别记录；模块导航见 [文档入口](index.md)。

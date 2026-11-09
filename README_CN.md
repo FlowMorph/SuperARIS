@@ -145,7 +145,7 @@ superaris
 
 ## 使用文档
 
-- [[docs/USAGE|可选本地用量检测]]：`superaris usage PROJECT --by-role --json`
+- [可选本地用量检测](docs/USAGE.md)：`superaris usage PROJECT --by-role --json`
 
 - [Windows 安装与支持范围](docs/WINDOWS.md)
 - [工作台、角色与人工接手](docs/WORKBENCH.md)
