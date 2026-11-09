@@ -4,13 +4,35 @@
 
 **你的个人科研 Agent，基于 ARIS，由一支常驻 Agent 团队协作推进。**
 
-[![Homepage](https://img.shields.io/badge/Homepage-Live%20demo-0969da?style=flat)](https://wanshuiyin.github.io/SuperARIS/) [![安装](https://img.shields.io/badge/Install-Quick%20start-2da44e?style=flat)](#安装与启动) [![使用文档](https://img.shields.io/badge/Guides-Docs-0d9488?style=flat)](#使用文档) [![Preview v0.1.0](https://img.shields.io/badge/Preview-v0.1.0-6e7781?style=flat)](pyproject.toml) [![English](https://img.shields.io/badge/Language-English-8250df?style=flat)](README.md)<br>[![Built on ARIS](https://img.shields.io/badge/Built%20on-ARIS-455299?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite%20ARIS-BibTeX-556b52?style=flat)](#cite-aris) [![MIT License](https://img.shields.io/badge/License-MIT-555555?style=flat)](LICENSE) [![加入共享社区](https://img.shields.io/badge/Join%20Community-ARIS-07a65a?style=flat)](#community)
+[![Homepage](https://img.shields.io/badge/Homepage-Live%20demo-0969da?style=flat)](https://wanshuiyin.github.io/SuperARIS/) [![Quick Start](https://img.shields.io/badge/Quick%20Start-Herdr%20%2B%20Orca-2da44e?style=flat)](#快速开始) [![使用文档](https://img.shields.io/badge/Guides-Docs-0d9488?style=flat)](#使用文档) [![Preview v0.1.0](https://img.shields.io/badge/Preview-v0.1.0-6e7781?style=flat)](pyproject.toml) [![English](https://img.shields.io/badge/Language-English-8250df?style=flat)](README.md)<br>[![Built on ARIS](https://img.shields.io/badge/Built%20on-ARIS-455299?style=flat)](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) [![Cite ARIS](https://img.shields.io/badge/Cite%20ARIS-BibTeX-556b52?style=flat)](#cite-aris) [![MIT License](https://img.shields.io/badge/License-MIT-555555?style=flat)](LICENSE) [![加入共享社区](https://img.shields.io/badge/Join%20Community-ARIS-07a65a?style=flat)](#community)
 
 [![看看团队怎样推进研究 — 中文动图预览](assets/demo-zh.gif)](https://wanshuiyin.github.io/SuperARIS/media/demo-zh.mp4)
 
 **[▶ 播放完整 1080p 中文演示 · 约21秒](https://wanshuiyin.github.io/SuperARIS/media/demo-zh.mp4)**
 
 *动图预览，点击播放高清完整版。示例项目与数据。*
+
+**Orca 多模型团队：**[主页交互版](https://wanshuiyin.github.io/SuperARIS/?host=orca&lang=zh#workbench) · [中文视频](https://wanshuiyin.github.io/SuperARIS/media/orca-multi-demo-zh.mp4) · [English video](https://wanshuiyin.github.io/SuperARIS/media/orca-multi-demo-en.mp4)。保留[单模型团队（3 个 Codex Agent）](https://wanshuiyin.github.io/SuperARIS/orca-demo/?team=codex&lang=zh)及其[中文](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-zh.mp4)/[英文](https://wanshuiyin.github.io/SuperARIS/media/orca-demo-en.mp4)原视频。
+
+## 快速开始
+
+准备好 Python 3.10+、Git 和 [pipx](https://pipx.pypa.io/stable/installation/)，以及已配置模型访问的所选 Agent CLI（`codex`、`claude`、`agy`）。安装一次，再打开向导：
+
+```bash
+pipx install "git+https://github.com/wanshuiyin/SuperARIS.git"
+superaris
+```
+
+依次选择语言、项目、工作台、团队和模型；已安装的 Herdr 或 Orca 会直接复用。
+
+也可以进入新项目目录，明确选择一种工作台启动：
+
+| 工作台 | 在当前项目启动 | 安装与使用指南 |
+|---|---|---|
+| **Herdr（默认）** | `superaris start . --host herdr` | [工作台与启动](docs/WORKBENCH.md) · [Windows](docs/WINDOWS.md) |
+| **Orca（可选）** | `superaris start . --host orca` | [Orca 安装与使用](docs/ORCA.md) |
+
+使用 Orca 前，先安装并打开[官方应用](https://www.onorca.dev/)；若 CLI 不可用，在 **Settings → General → Orca CLI** 注册命令。已有项目重入时保留原工作台与团队。[更多安装方式 ↓](#安装与启动)
 
 和你的个人 Agent 讨论科研目标，让它组织团队、分配工作、核验成果，并跟进下一步。想深入讨论一个想法、共同修改一段正文，或亲自接手时，直接进入相应成员的会话。
 
@@ -52,9 +74,13 @@ SuperARIS 基于 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-
 
 原团队仍在运行时，重新打开即可继续对话；换一个新会话，也能从项目恢复入口接上已有工作。[上下文与恢复 →](docs/PROJECT_CONTEXT.md)
 
+[![SuperARIS 项目记忆：今天的团队随工作更新项目文件，后续会话读回这些记录并核对当前任务与实际产物。](assets/project-memory-zh.png)](assets/project-memory-zh.png)
+
+*项目文件承接跨天、跨会话的研究进度。点击查看原图。*
+
 ## 安装与启动
 
-需要 Python 3.10+、macOS / Linux / Windows、[Herdr](https://herdr.dev)，以及配置好模型访问的所选原生 CLI（`codex`、`claude`、`agy`）。
+需要 Python 3.10+、macOS / Linux / Windows、[Herdr](https://herdr.dev)（默认）或[可选的 Orca Terminal v1 工作台](docs/ORCA.md)，以及配置好模型访问的所选原生 CLI（`codex`、`claude`、`agy`）。
 
 ```bash
 pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'

@@ -10,8 +10,8 @@ the relevant record with evidence and the next action. Do not create mandatory
 ledger. Re-read user-edited files at the next relevant boundary; cached prompts
 must not overwrite current facts.
 
-The user designates the coordinator. Verify the real Herdr server/session,
-pane or live agent handle, project cwd, task and owner before reuse. Role labels
+The user designates the coordinator. Verify the bound workbench host and its real server/runtime, session,
+pane/terminal or live agent handle, project cwd, task and owner before reuse. Role labels
 alone are insufficient. Reuse the existing task mapping; record only the
 transport/ownership facts it lacks: handle, checkout/branch, exclusive write
 scope, current assignment, delivery/query path and next action. Git and native
@@ -30,7 +30,7 @@ A useful packet states the objective, necessary facts and sources, selected
 skills, actual owner/handle, exclusive write scope, deliverable paths, acceptance
 method, budget/permission limits and continuation/query handle. Use separate
 worktrees or exclusive directories for concurrent writers. Hand off ownership
-before integrating shared files. Do not send simultaneous MCP and Herdr commands
+before integrating shared files. Do not send simultaneous MCP and workbench commands
 to the same native session.
 
 For paper/survey writing, Codex can establish source-grounded facts, formulas,
@@ -51,7 +51,7 @@ Use an existing native callback when it supplies real completion/failure
 receipts. Otherwise use the project's limited receipt/event bridge, bound to the
 original project, owner session and registered worker handles. The bridge is
 transport, not scientific judgment. Keep each MCP's job/thread protocol;
-Herdr `idle`/`done`, a CLI exit and a model's self-report are prompts to inspect
+Workbench `idle`/`done`, a CLI exit and a model's self-report are prompts to inspect
 actual files, command exit codes and completed reviewer responses.
 
 On a result, failure, stalled task, new reply or relevant file update: read the

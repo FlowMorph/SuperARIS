@@ -1,5 +1,10 @@
 # Visible SuperARIS layouts
 
+The pane topology and Herdr commands below apply to a Herdr-bound project.
+For Orca, read [orca-host.md](orca-host.md), inspect the original terminal
+bindings and use Orca controls; retain the same role ownership and scope rules.
+Do not move or recreate terminals to imitate the Herdr pane diagram.
+
 New workbenches default to three responsibilities: `main`, `engineer` and
 `writer`, with the same left-owner / right-stacked-collaborators layout.
 Role, CLI harness and model remain distinct:

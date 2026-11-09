@@ -12,6 +12,7 @@ from .context import prepare_context
 from .delivery import deliver
 from .state import directory, launch_lock, read, write
 from .dependencies import resolve_aris_repo
+from .hosts import client_for_binding, identity_present, selected_host
 
 
 def binding(project: Path) -> dict:
@@ -61,18 +62,38 @@ def _agent_name(project: Path, role: str, agents: list[dict]) -> str:
 
 def start(plan: dict, args, *, stop_event=None) -> dict:
     project = Path(plan["project"])
-    client = Herdr(plan["session"], args.herdr_bin)
     with launch_lock(project):
         old = binding(project)
-        if old and old["session"] != plan["session"]:
+        host = selected_host(old, plan.get("host"))
+        seed = old or {"host": host, "session": plan["session"]}
+        client = client_for_binding(seed, project, args.herdr_bin,
+                                    orca_bin=getattr(args, "orca_bin", None), herdr_factory=Herdr)
+        if host == "herdr" and old and old["session"] != plan["session"]:
             raise ValueError(f"Project already bound to session {old['session']!r}; use that explicit session")
         aris_repo = resolve_aris_repo(getattr(args, "aris_repo", None) or os.environ.get("SUPERARIS_ARIS_REPO") or old.get("aris_repo"))
-        client.ensure(directory(project) / "server.log", install=not args.no_install)
-        verify_caller(client, args.caller_pane, args.caller_native_session)
+        if host == "orca":
+            client.ensure_startable(new=not old.get("roles"))
+            if args.caller_pane or args.caller_native_session:
+                raise ValueError("Herdr caller identity cannot authorize an Orca terminal; use its explicit owner handle")
+        else:
+            client.ensure(directory(project) / "server.log", install=not args.no_install)
+            verify_caller(client, args.caller_pane, args.caller_native_session)
         current = old or {"project": str(project), "session": plan["session"], "roles": {}, "preset": plan["preset"]}
         current["aris_repo"] = str(aris_repo)
+        if host == "orca":
+            current.update(host="orca", orca_bin=client.binary, execution_environment="local")
+            workspace = client.ensure_workspace()
+            current["worktree_selector"] = "id:" + workspace["worktreeId"]
+            client.bound = current
         if args.owner and "main" not in current["roles"]:
-            agent = client.json("agent", "get", args.owner)["agent"]
+            if host == "orca":
+                terminal = client.terminal(args.owner)
+                kind = {"codex": "codex", "claude": "claude", "antigravity": "agy"}.get(terminal.get("agentIdentity"))
+                if not kind:
+                    raise HerdrError("Selected Orca owner is not a supported native terminal agent")
+                agent = {"pane_id": args.owner, "agent": kind}
+            else:
+                agent = client.json("agent", "get", args.owner)["agent"]
             candidate = {"pane_id": agent["pane_id"], "harness": agent["agent"],
                          "automation_owned": False, "created": False}
             current["roles"]["main"] = verify_owner(client, candidate, project)
@@ -130,8 +151,16 @@ def start(plan: dict, args, *, stop_event=None) -> dict:
             # is not evidence that the original team had only one role.
             current["pending_start"] = {
                 "arguments": args.start_arguments,
+                **({"host": "orca", "execution_environment": "local", "orca_bin": client.binary,
+                    "worktree_selector": current["worktree_selector"]} if host == "orca" else {}),
                 "roles": [dict(item) for item in selected_roles if item["active"]],
             }
+            save_binding(project, current)
+        if host == "orca" and current.get("pending_start"):
+            # A wizard may have saved the confirmed intent before runtime
+            # discovery. Add its actual route without replacing its choices.
+            current["pending_start"].update(host="orca", execution_environment="local",
+                                            orca_bin=client.binary, worktree_selector=current["worktree_selector"])
             save_binding(project, current)
         for selected in selected_roles:
             if stop_event is not None and stop_event.is_set():
@@ -146,6 +175,8 @@ def start(plan: dict, args, *, stop_event=None) -> dict:
             if role == "main" and collaborator_scopes:
                 inputs["excluded_scopes"] = [item["write_scope"] for item in collaborator_scopes]
             if existing:
+                if host == "orca" and not existing.get("pane_id"):
+                    raise HerdrError("Original Orca launch outcome is unknown; inspect its saved receipt and workspace before recovering this role")
                 live = verify_owner(client, existing, project)
                 current["roles"][role] = live
                 if existing.get("delivery", {}).get("phase") in {"attempting", "unknown"}:
@@ -154,7 +185,7 @@ def start(plan: dict, args, *, stop_event=None) -> dict:
                     continue
                 if existing.get("inputs") != inputs:
                     context = prepare_context(project, role, live["harness"], selected["task"], selected["skills"],
-                                              selected["recovery"], aris_repo, [selected["write_scope"]])
+                                              selected["recovery"], aris_repo, [selected["write_scope"]], **({"workbench_host": host} if host == "orca" else {}))
                     _exclude_writers(context, role, collaborator_scopes)
                     live.update(context=context, inputs=inputs, pending_context=context["packet"],
                                 delivery={"phase": "prepared", "packet": context["packet"]})
@@ -174,15 +205,64 @@ def start(plan: dict, args, *, stop_event=None) -> dict:
                                         "pending_context": existing.get("pending_context"), "delivery": existing.get("delivery")})
                 current["roles"][role] = live
                 continue
-            if not shutil.which(kind):
+            if host == "herdr" and not shutil.which(kind):
                 if role == "main":
                     raise ValueError(f"Selected main harness is missing: {kind}; complete its native installation/login")
                 actions.append({"role": role, "action": "unavailable", "reason": f"missing {kind} CLI"})
                 continue
             Path(selected["write_scope"]).mkdir(parents=True, exist_ok=True)
             context = prepare_context(project, role, kind, selected["task"], selected["skills"],
-                                      selected["recovery"], aris_repo, [selected["write_scope"]])
+                                      selected["recovery"], aris_repo, [selected["write_scope"]], **({"workbench_host": host} if host == "orca" else {}))
             _exclude_writers(context, role, collaborator_scopes)
+            if host == "orca":
+                record = {"host": "orca", "harness": kind, "created": True,
+                          "automation_owned": args.automation_owned, "context": context,
+                          "requested_model": selected["model"], "status": "starting", "inputs": inputs,
+                          "pending_context": context["packet"],
+                          "delivery": {"phase": "attempting", "packet": context["packet"]},
+                          "launch_phase": "attempting"}
+                current["roles"][role] = record
+                save_binding(project, current)
+                try:
+                    response = client.launch_agent(kind, selected["model"], context["prompt"])
+                    record["launch_receipt"] = response
+                    result = response.get("result", {})
+                    outcome = result.get("outcome", {})
+                    if result.get("operationId"):
+                        record["operation_id"] = result["operationId"]
+                    if outcome.get("kind") != "terminal" or not outcome.get("handle"):
+                        raise HerdrError("Orca did not return a terminal handle; inspect the original launch receipt")
+                    record["pane_id"] = outcome["handle"]
+                    if response.get("_meta", {}).get("runtimeId"):
+                        record["runtime_id"] = response["_meta"]["runtimeId"]
+                    record["launch_phase"] = "launched"
+                    prompt_receipt = result.get("prompt", {})
+                    record["delivery"].update(
+                        phase="submitted" if prompt_receipt.get("delivery") == "submit" and
+                        prompt_receipt.get("outcome") == "handed-to-terminal" else "unknown",
+                        receipt=response)
+                    save_binding(project, current)
+                    current["roles"][role] = (client.wait_owner(record, project, on_observed=lambda: save_binding(project, current)) if hasattr(client, "wait_owner")
+                                               else verify_owner(client, record, project))
+                except (HerdrError, OSError) as exc:
+                    if record["launch_phase"] == "attempting":
+                        record["launch_phase"] = "unknown"
+                    if record["delivery"]["phase"] == "attempting":
+                        record["delivery"]["phase"] = "unknown"
+                    record["launch_error"] = str(exc)
+                    native_response = getattr(exc, "response", None)
+                    if native_response:
+                        record["launch_receipt"] = native_response
+                        operation = (native_response.get("result", {}).get("operationId") or
+                                     native_response.get("error", {}).get("data", {}).get("operationId"))
+                        if operation:
+                            record["operation_id"] = operation
+                    save_binding(project, current)
+                    raise
+                save_binding(project, current)
+                actions.append({"role": role, "action": "started", "pane_id": record["pane_id"],
+                                "packet": context["packet"], "launch_receipt": response})
+                continue
             ui_language = current.get("ui_language")
             if ui_language in {"zh", "en"}:
                 from .ui import tr
@@ -253,13 +333,14 @@ def start(plan: dict, args, *, stop_event=None) -> dict:
             actions.append({"role": role, "action": "started", "pane_id": pane, "packet": context["packet"]})
         pending = current.get("pending_start")
         if pending and stop_event is None and all(
-                current["roles"].get(item["role"], {}).get("pid") for item in pending["roles"]):
+                identity_present(current["roles"].get(item["role"], {})) for item in pending["roles"]):
             # Membership is now verified. Unknown context delivery remains in
             # each original role record; clearing startup intent is not receipt
             # acceptance. Interactive startup keeps its existing completion path.
             current.pop("pending_start", None)
         save_binding(project, current)
-    return {"mode": "running", "project": str(project), "session": client.session,
+    return {"mode": "running", "project": str(project), "session": current["session"],
+            **({"host": "orca"} if host == "orca" else {}),
             "actions": actions, "roles": current["roles"], "acceptance": "not_evaluated"}
 
 
@@ -280,6 +361,8 @@ def _submit_context(client, project, current, role, initial=False):
                           record["context"]["prompt"])
     except (HerdrError, OSError) as exc:
         record["delivery"].update(phase="unknown", error=str(exc))
+        if getattr(exc, "response", None):
+            record["delivery"]["native_response"] = exc.response
         save_binding(project, current)
         raise
     record["delivery"].update(phase=receipt["delivery"], receipt=receipt)
@@ -297,7 +380,8 @@ def control(project: Path, role: str, mode: str, binary: str) -> dict:
         current = binding(project)
         if role not in current.get("roles", {}):
             raise ValueError("Unknown project role")
-        record = verify_owner(Herdr(current["session"], binary), current["roles"][role], project)
+        client = client_for_binding(current, project, binary, herdr_factory=Herdr)
+        record = verify_owner(client, current["roles"][role], project)
         record["automation_owned"] = mode == "automation"
         if mode == "human":
             record["bootstrap_pending"] = False
@@ -345,6 +429,14 @@ def attach(project: Path, binary: str = "herdr") -> int:
     info = binding(project)
     if not info:
         raise ValueError("No workbench binding for this project")
+    if selected_host(info) == "orca":
+        client = client_for_binding(info, project, binary, herdr_factory=Herdr)
+        main = info.get("roles", {}).get("main")
+        if not main:
+            raise ValueError("No recorded Orca main owner to reveal")
+        live = verify_owner(client, main, project)
+        client.open_ui(live["pane_id"])
+        return 0
     # Receiving was established independently by start(). Detaching this TUI
     # does not stop the original owner, worker or project receiver component.
     return subprocess.call([binary, "--session", info["session"]])

@@ -17,6 +17,7 @@ from .runtime import binding
 from .state import directory, read, write
 from . import __version__
 from .platform import FileLock, LockBusy, detached_process_options
+from .hosts import client_for_binding, identity_present, selected_host
 
 
 def implementation() -> dict:
@@ -25,11 +26,20 @@ def implementation() -> dict:
 
 def signature(bound: dict) -> dict:
     main = bound.get("roles", {}).get("main", {})
-    return {"session": bound.get("session"), **{key: main.get(key) for key in
+    identity = {"session": bound.get("session"), **{key: main.get(key) for key in
             ("pane_id", "harness", "pid", "native_session_id")}}
+    if selected_host(bound) == "orca":
+        identity.update(host="orca", execution_environment=bound.get("execution_environment", "local"),
+                        **{key: main.get(key) for key in ("runtime_id", "process_incarnation", "execution_host", "pane_key")})
+    return identity
 
 
 def same_owner(expected: dict, current: dict) -> bool:
+    if expected.get("host", "herdr") != current.get("host", "herdr"):
+        return False
+    if expected.get("host") == "orca" and any(expected.get(key) != current.get(key) for key in
+            ("execution_environment", "runtime_id", "process_incarnation", "execution_host", "pane_key")):
+        return False
     if any(expected.get(key) != current.get(key) for key in ("session", "pane_id", "harness", "pid")):
         return False
     before, after = expected.get("native_session_id"), current.get("native_session_id")
@@ -77,9 +87,9 @@ def ensure_receiver(project: Path, binary: str = "herdr", enable: bool = False) 
         root = directory(project)
         bound = binding(project)
         expected = signature(bound)
-        if not expected["session"] or not expected["pane_id"] or not expected["pid"]:
+        if not expected["session"] or not identity_present(bound.get("roles", {}).get("main", {})):
             raise ValueError("Receiver needs the verified original main process identity")
-        verify_owner(Herdr(expected["session"], binary), bound["roles"]["main"], project)
+        verify_owner(client_for_binding(bound, project, binary, herdr_factory=Herdr), bound["roles"]["main"], project)
         control = read(root / "receiver-control.json", {"enabled": True})
         if enable:
             control["enabled"] = True
@@ -158,7 +168,7 @@ def run(project: Path, generation: str, binary: str = "herdr") -> dict:
                 current = binding(project)
                 # Also verify the exact native process while a diagnostic
                 # foreground listener temporarily owns listen.lock.
-                verify_owner(Herdr(record["owner"]["session"], binary), current["roles"]["main"], project)
+                verify_owner(client_for_binding(current, project, binary, herdr_factory=Herdr), current["roles"]["main"], project)
                 try:
                     outcome = listen(project, binary, duration=None, interval=2, stop_event=lifetime)
                     if outcome.get("reason") == "unknown_requires_inspection":

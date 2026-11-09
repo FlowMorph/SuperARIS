@@ -29,9 +29,9 @@ superaris receiver /path/to/project --action status
 
 Startup ensures a receiver subprocess bound to this project and its original
 main identity, including with `--no-attach`. Detaching the UI or exiting the
-launcher leaves that receiver active. It connects to real Herdr events and
+launcher leaves that receiver active. It uses the bound host's receiving mechanism and
 reconciles registered files/reports without polling an idle model. It stops if
-the expected main ends/changes, the Herdr server becomes unavailable, or the
+the expected main ends/changes, the bound host runtime becomes unavailable, or the
 owner explicitly stops it. It does not rebuild a server, follow a replacement
 main, create panes or install a global permanent daemon.
 

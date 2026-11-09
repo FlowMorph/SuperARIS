@@ -1,6 +1,6 @@
 ---
 name: project-agent
-description: Start or continue a Herdr-backed ARIS project agent with existing project memory, bounded role delegation and evidence-based follow-up. Use for a persistent project owner or Herdr workbench; ordinary one-off skills remain directly usable.
+description: Start or continue a Herdr- or Orca-backed ARIS project agent with existing project memory, bounded role delegation and evidence-based follow-up. Use for a persistent project owner or a supported workbench; ordinary one-off skills remain directly usable.
 ---
 
 # Project Agent
@@ -15,7 +15,11 @@ first. Restore active work and its real owner before making new assignments;
 reading this skill does not designate you as coordinator or resume paused work.
 
 For startup, role presets and helper resolution, read
-[references/launch.md](references/launch.md). Before Herdr scheduling, verify
+[references/launch.md](references/launch.md). Read the packet/navigation workbench host
+and original launch.json binding; missing host on an older binding means Herdr.
+For Orca, read [references/orca-host.md](references/orca-host.md) and follow its
+terminal/runtime identity checks; Herdr environment markers and commands do not
+identify an Orca session. Before Herdr scheduling, verify
 the actual environment: `HERDR_ENV=1` is one signal, but backend shell calls may
 lack it. In that case use an explicit user-confirmed session/pane association
 and official API verification of the caller's native session/process and cwd.

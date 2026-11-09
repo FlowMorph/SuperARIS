@@ -1580,6 +1580,7 @@
     .install-pill > span {overflow-wrap:anywhere;min-width:0}
     button:focus-visible,a:focus-visible,select:focus-visible {outline:2px solid var(--periwinkle);outline-offset:3px}
   </style>
+  <link rel="stylesheet" href="workbench-hosts.css">
 </head>
 <body data-theme="warm">
 
@@ -1629,7 +1630,7 @@
           <span><span class="prompt-dollar">$</span> pipx install 'git+https://github.com/wanshuiyin/SuperARIS.git'</span>
           <button type="button" class="copy-btn" id="copy-cmd-btn">Copy</button>
         </div>
-        <p class="install-note"><a href="https://github.com/wanshuiyin/SuperARIS#install-and-open" data-i18n="install_note">Python 3.10+ · macOS / Linux · Configure Herdr and your selected native CLIs. Install &amp; guide →</a></p>
+        <p class="install-note"><a href="https://github.com/wanshuiyin/SuperARIS#install-and-open" data-i18n="install_note">Python 3.10+ · macOS / Linux / Windows · Choose Herdr or Orca and your native CLIs. Install &amp; guide →</a></p>
         <div class="hero-role-badges">
           <span class="role-chip"><span class="chip-dot" style="background: var(--cc-coral)"></span>main · Claude Code</span>
           <span class="role-chip"><span class="chip-dot" style="background: var(--codex-green)"></span>engineer · Codex</span>
@@ -1638,8 +1639,17 @@
       </div>
     </section>
 
+    <section class="host-picker" id="workbench" aria-label="Workbench demo">
+      <div class="host-picker-title" data-host-i18n="choose">Choose a workbench demo</div>
+      <div class="host-picker-tabs" role="tablist" aria-label="Workbench host">
+        <button type="button" id="host-herdr" role="tab" aria-selected="true" aria-controls="herdr-demo-panel">Herdr</button>
+        <button type="button" id="host-orca" role="tab" aria-selected="false" aria-controls="orca-demo-panel">Orca</button>
+      </div>
+      <a class="host-standalone" id="host-standalone" href="orca-demo/?lang=en" data-host-i18n="standalone">Open Orca demo ↗</a>
+    </section>
+    <div id="herdr-demo-panel" class="host-panel" role="tabpanel" aria-labelledby="host-herdr">
     <!-- Stage Director Bar -->
-    <div class="director-bar" id="workbench">
+    <div class="director-bar" id="herdr-workflow">
       <div class="stage-steps" id="stage-steps" role="tablist" aria-label="Research workflow stages">
         <!-- Populated by JS -->
       </div>
@@ -1919,6 +1929,18 @@
     </section>
 
     <p class="demo-note" data-i18n="demo_note">Interactive walkthrough · illustrative project and data. Models and roles are configurable.</p>
+    </div>
+    <div id="orca-demo-panel" class="host-panel" role="tabpanel" aria-labelledby="host-orca" hidden>
+      <iframe id="orca-demo-frame" src="orca-demo/?embedded=1&amp;lang=en" title="SuperARIS Orca Terminal demo" loading="lazy"></iframe>
+    </div>
+    <nav class="demo-recordings" aria-label="Orca demo videos">
+      <span data-host-i18n="videos">Orca multi-model · 1080p / 2×</span>
+      <a href="media/orca-multi-demo-en.mp4" data-video-language="en" data-host-i18n="enVideo">English video</a>
+      <a href="media/orca-multi-demo-en.mp4" data-video-language="en" download="SuperARIS-orca-multi-demo-en.mp4" data-host-i18n="download">Download</a>
+      <a href="media/orca-multi-demo-zh.mp4" data-video-language="zh" data-host-i18n="zhVideo">中文视频</a>
+      <a href="media/orca-multi-demo-zh.mp4" data-video-language="zh" download="SuperARIS-orca-multi-demo-zh.mp4" data-host-i18n="download">Download</a>
+      <a id="orca-other-video" href="media/orca-demo-en.mp4" data-host-i18n="other">Single-model video</a>
+    </nav>
     <!-- Below the Fold: 3 Researcher-Focused Cards -->
     <section class="below-fold" id="capabilities">
       <div class="info-card">
@@ -1984,7 +2006,7 @@
           card3_desc: "Reopen the project and read its saved decisions, results, and pending work. Continue with the original team while its sessions are active, or load the project recovery files in a new session.",
           mcp_title: "⚡ Background reviewer · Fresh context",
           mcp_body: "Read <code>paper/method.tex</code> alongside <code>results/table1.json</code>. The reviewer asks for a clearer uncertainty statement; Gemini revises it and Codex checks the values.",
-          link_pipeline:"Full pipeline",link_ideas:"Ideas",link_experiments:"Experiments",link_review:"Review",link_writing:"Writing",link_guide:"Project guide ↗",fresh_context:"Fresh context",record_title:"Project record",review_toggle:"Background review",theme_dark:"Dark",theme_warm:"Warm",replay:"↺ Replay",demo_note:"Interactive walkthrough · illustrative project and data. Models and roles are configurable.",install_note:"Python 3.10+ · macOS / Linux · Configure Herdr and your selected native CLIs. Install & guide →",
+          link_pipeline:"Full pipeline",link_ideas:"Ideas",link_experiments:"Experiments",link_review:"Review",link_writing:"Writing",link_guide:"Project guide ↗",fresh_context:"Fresh context",record_title:"Project record",review_toggle:"Background review",theme_dark:"Dark",theme_warm:"Warm",replay:"↺ Replay",demo_note:"Interactive walkthrough · illustrative project and data. Models and roles are configurable.",install_note:"Python 3.10+ · macOS / Linux / Windows · Choose Herdr or Orca and your native CLIs. Install & guide →",
           history_label: "Earlier in this session"
         },
         zh: {
@@ -2004,7 +2026,7 @@
           card3_desc: "重新打开项目，读取已保存的决定、结果与待办。仍在运行的原团队直接续接；新会话则从项目恢复文件重新接上上下文。",
           mcp_title: "⚡ 后台 reviewer · 全新上下文",
           mcp_body: "对照读取 <code>paper/method.tex</code> 与 <code>results/table1.json</code>。reviewer 提醒补全不确定性说明，Gemini 修订表述，Codex 核对数值。",
-          link_pipeline:"完整科研",link_ideas:"选题",link_experiments:"实验",link_review:"评审",link_writing:"论文",link_guide:"项目指南 ↗",fresh_context:"全新上下文",record_title:"项目记录",review_toggle:"后台 review",theme_dark:"深色",theme_warm:"暖米",replay:"↺ 重播",demo_note:"交互演示 · 示例项目与数据。模型与分工可按需配置。",install_note:"Python 3.10+ · macOS / Linux · 配置 Herdr 与所选原生 CLI。安装与指南 →",
+          link_pipeline:"完整科研",link_ideas:"选题",link_experiments:"实验",link_review:"评审",link_writing:"论文",link_guide:"项目指南 ↗",fresh_context:"全新上下文",record_title:"项目记录",review_toggle:"后台 review",theme_dark:"深色",theme_warm:"暖米",replay:"↺ 重播",demo_note:"交互演示 · 示例项目与数据。模型与分工可按需配置。",install_note:"Python 3.10+ · macOS / Linux / Windows · 选择 Herdr 或 Orca 与所需原生 CLI。安装与指南 →",
           history_label: "本轮会话前序记录"
         }
       };
@@ -2586,7 +2608,7 @@
       const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
       const state = {
-        speed:2, theme:"warm", showReview:true,
+        speed:2, theme:"warm", showReview:true, hostActive:true,
         lang: "en",
         sceneIndex: 0,
         isPlaying: !reducedMotionQuery.matches,
@@ -2627,7 +2649,7 @@
       }
 
       function isEffectivelyRunning() {
-        return state.isPlaying && !state.isDocHidden && state.isInViewport && !state.reducedMotion;
+        return state.isPlaying && state.hostActive && !state.isDocHidden && state.isInViewport && !state.reducedMotion;
       }
 
       function typingDuration(sc) { return (sc.inputs[sc.focusedPane] || "").length * TYPE_CHAR_MS; }
@@ -3018,10 +3040,12 @@
 
       // Read-only state hook for verification
       window.SuperARISDemo = {
+        setHostActive: function(active) { state.hostActive=Boolean(active); state.lastFrameTs=0; syncClock(); },
+        setLanguage: function(lang) { if (lang !== state.lang) applyLanguage(lang); },
         getState: function () {
           const sc = SCENES[state.sceneIndex];
           return {
-            language:state.lang, step:state.sceneIndex, playing:state.isPlaying,
+            language:state.lang, step:state.sceneIndex, playing:state.isPlaying, hostActive:state.hostActive,
             visible:state.isInViewport, documentVisible:!state.isDocHidden,
             speed:state.speed,theme:state.theme,showReview:state.showReview,elapsed:state.elapsedMs,
             progress:state.elapsedMs/sceneDuration(sc), pendingCount:state.rafId===null?0:1,
@@ -3042,10 +3066,11 @@
       };
 
       // Initialize
-      applyLanguage("en");
+      applyLanguage(new URLSearchParams(location.search).get("lang") === "zh" ? "zh" : "en");
       loadScene(0, { revealImmediately: state.reducedMotion });
       syncClock();
     })();
   </script>
+  <script src="workbench-hosts.js"></script>
 </body>
 </html>

@@ -8,10 +8,11 @@ variable. Do not locate the product under `$ARIS_REPO/tools/` or require
 
 ## Source and requirements
 
-The runtime requires Python ≥3.10 on macOS, Linux or native Windows, Herdr
-and the selected native CLIs. On Windows use Windows Terminal / PowerShell;
+The runtime requires Python ≥3.10 on macOS, Linux or native Windows, a supported workbench
+(Herdr by default, or Orca), and the selected native CLIs. For Orca-specific
+terminal/runtime checks read [orca-host.md](orca-host.md). On Windows use Windows Terminal / PowerShell;
 Herdr supplies ConPTY panes, and SuperARIS uses kernel file locks, raw NDJSON
-named pipes and a detached receiver. Confirmed startup can install missing
+named pipes and a detached receiver. For a Herdr-bound launch, confirmed startup can install missing
 Herdr with its official PowerShell installer. Chooser screens and cancellation
 do not install dependencies or fetch ARIS. Use their own model/login configuration; detecting
 an executable does not verify authentication or model access. No model probes,
@@ -58,9 +59,13 @@ client UI. It saves on confirmation; existing bound labels are preserved.
 A bound project first offers its original owner/session/models/roles/tasks.
 Omitted explicit parameters preserve existing inputs; `--clear-recovery`
 explicitly clears recovery. Native trust/login stays human-operated. Startup
-can continue while Herdr stays open once the user clears a native wait. Keep
+can continue while the selected workbench stays open once the user clears a native wait. Keep
 original owners, writing scopes and unknown delivery state; do not resend an
 uncertain initial prompt. A changed owner requires explicit reconciliation.
+
+New projects can select Orca with `--host orca`; existing projects retain their
+bound host and team. A binding without a host field remains Herdr. Read the
+packet/navigation host instructions before workbench operations.
 
 Every new preset starts `main`, `engineer` and `writer`: `codex` maps all
 three to Codex; `cc-codex` uses CC / Codex / CC; `cc-codex-agy` uses
