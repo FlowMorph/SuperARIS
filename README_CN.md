@@ -52,6 +52,10 @@ SuperARIS 基于 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-
 
 原团队仍在运行时，重新打开即可继续对话；换一个新会话，也能从项目恢复入口接上已有工作。[上下文与恢复 →](docs/PROJECT_CONTEXT.md)
 
+[![SuperARIS 项目记忆：今天的团队随工作更新项目文件，后续会话读回这些记录并核对当前任务与实际产物。](assets/project-memory-zh.png)](assets/project-memory-zh.png)
+
+*项目文件承接跨天、跨会话的研究进度。点击查看原图。*
+
 ## 安装与启动
 
 需要 Python 3.10+、macOS / Linux / Windows、[Herdr](https://herdr.dev)，以及配置好模型访问的所选原生 CLI（`codex`、`claude`、`agy`）。

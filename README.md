@@ -50,6 +50,10 @@ Keep the project's goals, decisions, corrections, results, and next actions in i
 
 Reopen a running team to continue its conversations, or give a new session the project's recovery entry. [Context and recovery →](docs/PROJECT_CONTEXT.md)
 
+[![SuperARIS project memory: today’s team updates project files, and later sessions read them back to check the current task and actual artifacts (Chinese labels).](assets/project-memory-zh.png)](assets/project-memory-zh.png)
+
+*Project files carry progress into later sessions (Chinese labels). Click to view full size.*
+
 ## Install and open
 
 Requires Python 3.10+ on macOS, Linux or Windows, [Herdr](https://herdr.dev), and your chosen native CLIs (`codex`, `claude`, `agy`) with model access configured.
